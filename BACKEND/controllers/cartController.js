@@ -5,14 +5,27 @@ import db from "../config/db.js";
 export const createOrder = async (req, res) => {
   try {
     const { branch_id } = req.body;
-    const userId = req.user.user_id; // giả sử req.user có từ middleware auth
-    console.log("req.user = ", req.user);
+    const userId = req.user.user_id;
 
     if (!branch_id) {
       return res.status(400).json({ message: "Thiếu branch_id" });
     }
 
-    // Tạo giỏ hàng với status = DRAFT
+    // 1. Kiểm tra giỏ hàng DRAFT đã tồn tại chưa
+    const [existingOrders] = await db.query(
+      `SELECT order_id FROM orders WHERE user_id = ? AND branch_id = ? AND status = 'DRAFT'`,
+      [userId, branch_id]
+    );
+
+    if (existingOrders.length > 0) {
+      // Nếu đã có giỏ hàng DRAFT thì dùng lại
+      return res.status(200).json({
+        message: "Đã có giỏ hàng DRAFT, dùng lại",
+        order_id: existingOrders[0].order_id,
+      });
+    }
+
+    // 2. Nếu chưa có, tạo mới giỏ hàng
     const [result] = await db.query(
       `INSERT INTO orders (user_id, branch_id, status, total_price, created_at)
        VALUES (?, ?, 'DRAFT', 0, NOW())`,
@@ -20,7 +33,7 @@ export const createOrder = async (req, res) => {
     );
 
     return res.status(201).json({
-      message: "Tạo giỏ hàng thành công",
+      message: "Tạo giỏ hàng mới thành công",
       order_id: result.insertId,
     });
   } catch (error) {
@@ -41,16 +54,18 @@ export const addItemToOrder = async (req, res) => {
       return res.status(400).json({ message: "Số lượng phải >= 1" });
     }
 
-    // Lấy giá món ăn
+    // Lấy giá và tồn kho
     const [items] = await db.query(
-      "SELECT price FROM menu_items WHERE item_id = ? AND is_available = 1",
+      "SELECT price, stock_quantity FROM menu_items WHERE item_id = ? AND is_available = 1",
       [item_id]
     );
     if (items.length === 0) {
-      return res.status(404).json({ message: "Món ăn không tồn tại hoặc đã hết" });
+      return res
+        .status(404)
+        .json({ message: "Món ăn không tồn tại hoặc đã hết" });
     }
     const unitPrice = items[0].price;
-    const lineTotal = unitPrice * quantity;
+    const stock = items[0].stock_quantity;
 
     // Kiểm tra xem trong giỏ hàng đã có món này chưa
     const [existing] = await db.query(
@@ -59,15 +74,24 @@ export const addItemToOrder = async (req, res) => {
     );
 
     if (existing.length > 0) {
-      // Nếu có rồi thì cộng thêm số lượng
       const newQty = existing[0].quantity + quantity;
+      if (newQty > stock) {
+        return res.status(400).json({
+          message: `Số lượng vượt quá tồn kho. Hiện chỉ còn ${stock} sản phẩm`,
+        });
+      }
       const newLineTotal = unitPrice * newQty;
       await db.query(
         "UPDATE order_items SET quantity=?, line_total=? WHERE order_item_id=?",
         [newQty, newLineTotal, existing[0].order_item_id]
       );
     } else {
-      // Nếu chưa có thì thêm mới
+      if (quantity > stock) {
+        return res.status(400).json({
+          message: `Số lượng vượt quá tồn kho. Hiện chỉ còn ${stock} sản phẩm`,
+        });
+      }
+      const lineTotal = unitPrice * quantity;
       await db.query(
         `INSERT INTO order_items (order_id, item_id, quantity, unit_price, line_total, created_at)
          VALUES (?, ?, ?, ?, ?, NOW())`,
@@ -137,6 +161,22 @@ export const updateOrderItem = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy order_item" });
     }
     const orderItem = rows[0];
+
+    // Lấy tồn kho từ menu_items
+    const [items] = await db.query(
+      "SELECT stock_quantity FROM menu_items WHERE item_id = ?",
+      [orderItem.item_id]
+    );
+    if (items.length === 0) {
+      return res.status(404).json({ message: "Món ăn không tồn tại" });
+    }
+    const stock = items[0].stock_quantity;
+
+    if (quantity > stock) {
+      return res.status(400).json({
+        message: `Số lượng vượt quá tồn kho. Hiện chỉ còn ${stock} sản phẩm`,
+      });
+    }
 
     const newLineTotal = orderItem.unit_price * quantity;
 

@@ -11,7 +11,7 @@ export const getMenuItems = async (req, res) => {
     }
 
     const [rows] = await db.query(
-      "SELECT item_id, name, image, description, price, is_available, branch_id, created_at FROM menu_items WHERE branch_id = ?",
+      "SELECT item_id, name, image, category_id, description, price, is_available, branch_id, created_at FROM menu_items WHERE branch_id = ?",
       [branchId]
     );
 
@@ -27,7 +27,7 @@ export const getMenuItemById = async (req, res) => {
     const { id } = req.params;
 
     const [rows] = await db.query(
-      "SELECT item_id, name, image, description, price, is_available, branch_id, created_at FROM menu_items WHERE item_id = ?",
+      "SELECT item_id, name, image, category_id, description, price, is_available, branch_id, created_at FROM menu_items WHERE item_id = ?",
       [id]
     );
 
@@ -53,10 +53,17 @@ export const getMenuItemById = async (req, res) => {
 // ================= TẠO MÓN ĂN =================
 export const createMenuItem = async (req, res) => {
   try {
-    let { name, image, description, price, is_available, stock_quantity } =
-      req.body;
-    const branchId =
-      req.user.role === "STAFF" ? req.user.branch_id : req.body.branch_id;
+    let {
+      name,
+      image,
+      category_id,
+      description,
+      price,
+      is_available,
+      stock_quantity,
+    } = req.body;
+    
+    const branchId = req.user.role === "STAFF" ? req.user.branch_id : req.body.branch_id;
 
     if (!branchId) {
       return res.status(400).json({ message: "Thiếu branch_id" });
@@ -66,7 +73,7 @@ export const createMenuItem = async (req, res) => {
     if (typeof name === "string") name = name.trim();
     if (typeof description === "string") description = description.trim();
 
-        // Nếu stock_quantity = 0 => is_available = 0 (hết hàng)
+    // Nếu stock_quantity = 0 => is_available = 0 (hết hàng)
     if (stock_quantity !== null && stock_quantity !== undefined) {
       if (Number(stock_quantity) === 0) {
         is_available = 0;
@@ -76,18 +83,14 @@ export const createMenuItem = async (req, res) => {
           is_available = 1;
         }
       }
-    } else {
-      // NULL = không giới hạn => mặc định cho phép đặt
-      if (is_available === undefined) {
-        is_available = 1;
-      }
-    }
+    } 
 
     // Validate
     if (!name)
       return res
         .status(400)
         .json({ message: "Tên món ăn không được để trống" });
+
     if (!price || isNaN(price))
       return res.status(400).json({ message: "Giá món ăn phải là số hợp lệ" });
 
@@ -109,9 +112,37 @@ export const createMenuItem = async (req, res) => {
       stock_quantity = null;
     }
 
+    // Kiểm tra category_id hợp lệ
+    const [categoryRows] = await db.query(
+      "SELECT * FROM category WHERE category_id = ?",
+      [category_id]
+    );
+    if (categoryRows.length === 0) {
+      return res.status(400).json({ message: "Category không tồn tại" });
+    }
+
+    const category = categoryRows[0];
+    if (
+      req.user.role === "STAFF" &&
+      category.branch_id !== req.user.branch_id
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Không có quyền sử dụng category này" });
+    }
+
     await db.query(
-      "INSERT INTO menu_items (name, image, description, price, branch_id, stock_quantity, is_available, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-      [name, image, description, price, branchId, stock_quantity, is_available]
+      "INSERT INTO menu_items (name, image, category_id, description, price, branch_id, stock_quantity, is_available, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+      [
+        name,
+        image,
+        category_id,
+        description,
+        price,
+        branchId,
+        stock_quantity,
+        is_available,
+      ]
     );
 
     return res.status(201).json({ message: "Thêm món ăn thành công" });
@@ -124,7 +155,15 @@ export const createMenuItem = async (req, res) => {
 export const updateMenuItem = async (req, res) => {
   try {
     const { id } = req.params;
-    let { name, image, description, price, is_available, stock_quantity } = req.body;
+    let {
+      name,
+      image,
+      category_id,
+      description,
+      price,
+      is_available,
+      stock_quantity,
+    } = req.body;
 
     // Lấy dữ liệu cũ
     const [rows] = await db.query(
@@ -184,9 +223,29 @@ export const updateMenuItem = async (req, res) => {
       is_available = 0;
     }
 
+    // Kiểm tra category_id hợp lệ
+    const [categoryRows] = await db.query(
+      "SELECT * FROM category WHERE category_id = ?",
+      [category_id]
+    );
+    if (categoryRows.length === 0) {
+      return res.status(400).json({ message: "Category không tồn tại" });
+    }
+
+    const category = categoryRows[0];
+    if (
+      req.user.role === "STAFF" &&
+      category.branch_id !== req.user.branch_id
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Không có quyền sử dụng category này" });
+    }
+
     // Dùng dữ liệu cũ nếu không truyền mới
     name = name || oldData.name;
     image = image || oldData.image;
+    category_id = category_id || oldData.category_id;
     description = description || oldData.description;
     price = price || oldData.price;
     //price = price !== undefined ? price : oldData.price;
@@ -197,6 +256,7 @@ export const updateMenuItem = async (req, res) => {
     const noChange =
       name === oldData.name &&
       image === oldData.image &&
+      category_id === oldData.category_id &&
       description === oldData.description &&
       price === oldData.price &&
       is_available === oldData.is_available &&
@@ -210,8 +270,17 @@ export const updateMenuItem = async (req, res) => {
 
     // Update DB
     await db.query(
-      "UPDATE menu_items SET name=?, image=?, description=?, price=?, is_available=?, stock_quantity=? WHERE item_id=?",
-      [name, image, description, price, is_available, stock_quantity, id]
+      "UPDATE menu_items SET name=?, image=?, category_id=?, description=?, price=?, is_available=?, stock_quantity=? WHERE item_id=?",
+      [
+        name,
+        image,
+        category_id,
+        description,
+        price,
+        is_available,
+        stock_quantity,
+        id,
+      ]
     );
 
     return res.json({ message: "Cập nhật món ăn thành công" });
