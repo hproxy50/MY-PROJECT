@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
+import { useNavigate } from "react-router-dom"; 
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function MenuPage() {
@@ -8,6 +9,7 @@ export default function MenuPage() {
   const [menuItems, setMenuItems] = useState([]);
   const [order, setOrder] = useState(null);
 
+    const navigate = useNavigate();
   // Lấy token từ localStorage
   const token = localStorage.getItem("token");
 
@@ -28,12 +30,11 @@ export default function MenuPage() {
 
   // Khi chọn chi nhánh
   const handleSelectBranch = async (branchId) => {
-
     setSelectedBranch(branchId);
     try {
       // Gọi API tạo hoặc lấy giỏ hàng hiện có
       const orderRes = await API.post(
-        "/orders",
+        "/cart",
         { branch_id: branchId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -41,7 +42,7 @@ export default function MenuPage() {
       const orderId = orderRes.data.order_id;
 
       // Lấy chi tiết giỏ hàng (bao gồm items)
-      const orderDetailRes = await API.get(`/orders/${orderId}`, {
+      const orderDetailRes = await API.get(`/cart/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOrder(orderDetailRes.data);
@@ -60,12 +61,12 @@ export default function MenuPage() {
   const handleAddToCart = async (itemId) => {
     try {
       await API.post(
-        "/orders/items",
+        "/cart/items",
         { order_id: order.order_id, item_id: itemId, quantity: 1 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       // Refresh giỏ
-      const res = await API.get(`/orders/${order.order_id}`, {
+      const res = await API.get(`/cart/${order.order_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOrder(res.data);
@@ -79,11 +80,11 @@ export default function MenuPage() {
   const handleUpdateQty = async (orderItemId, qty) => {
     try {
       await API.put(
-        `/orders/items/${orderItemId}`,
+        `/cart/items/${orderItemId}`,
         { quantity: qty },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const res = await API.get(`/orders/${order.order_id}`, {
+      const res = await API.get(`/cart/${order.order_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOrder(res.data);
@@ -95,10 +96,10 @@ export default function MenuPage() {
   // Xóa món
   const handleDeleteItem = async (orderItemId) => {
     try {
-      await API.delete(`/orders/items/${orderItemId}`, {
+      await API.delete(`/cart/items/${orderItemId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const res = await API.get(`/orders/${order.order_id}`, {
+      const res = await API.get(`/cart/${order.order_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOrder(res.data);
@@ -207,6 +208,15 @@ export default function MenuPage() {
             <span className="text-danger fw-bold">
               {order.total_price?.toLocaleString()} đ
             </span>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                // chuyển hướng sang trang checkout kèm orderId
+                navigate(`/checkout/${order.order_id}`)
+              }}
+            >
+              💳 Thanh toán
+            </button>
           </h4>
         </div>
       )}

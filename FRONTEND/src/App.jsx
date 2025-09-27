@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/login';
 import Register from './pages/register';
 import MenuPage from './pages/MenuPage';
+import CheckoutPage from './pages/CheckoutPage';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/menu" element={<MenuPage />} />
+      <Route path="/checkout/:orderId" element={<CheckoutPage />} />
     </Routes>
   );
 }

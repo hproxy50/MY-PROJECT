@@ -3,9 +3,11 @@ import express from "express";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
-import orderRoutes from "./routes/orderRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import branchRoutes from "./routes/branchRoutes.js";
+import importRoutes from "./routes/importRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
 
 
 
@@ -30,11 +32,16 @@ app.use("/admin", adminRoutes);
 
 app.use("/menu", menuRoutes);
 
-app.use("/orders", orderRoutes);
+app.use("/cart", cartRoutes);
 
 app.use("/category", categoryRoutes);
 
 app.use("/branch", branchRoutes);
+
+app.use("/import", importRoutes);
+
+app.use("/orders", orderRoutes);
+
 
 // error handler (basic)
 app.use((err, req, res, next) => {

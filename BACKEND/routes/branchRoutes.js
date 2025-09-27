@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllBranch, createBranch, updateBranch, deleteBranch } from "../controllers/adminController.js"; 
+import { getAllBranch, createBranch, updateBranch, deleteBranch } from "../controllers/branchController.js"; 
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddlewares.js";
 
 const router = express.Router();

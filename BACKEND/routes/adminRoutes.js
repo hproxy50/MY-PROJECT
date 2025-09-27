@@ -1,6 +1,6 @@
 // routes/adminRoutes.js
 import express from "express";
-import { getAllUsers, getUserById, deleteUser, createCustomer, updateCustomer, createStaff, updateStaff, createBranch, getAllBranch, updateBranch, deleteBranch } from "../controllers/adminController.js";
+import { getAllUsers, getUserById, deleteUser, createCustomer, updateCustomer, createStaff, updateStaff } from "../controllers/adminController.js";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddlewares.js";
 
 const router = express.Router();
@@ -18,10 +18,5 @@ router.post("/users/staff", createStaff);
 router.put("/users/staff/:id", updateStaff);
 
 router.delete("/users/:id", deleteUser);
-
-router.get("/branch",getAllBranch)
-router.post("/branch/add", createBranch);
-router.put("/branch/update/:id",updateBranch);
-router.delete("/branch/delete/:id", deleteBranch);
 
 export default router;
