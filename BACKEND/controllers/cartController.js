@@ -99,12 +99,15 @@ export const addItemToOrder = async (req, res) => {
       );
     }
 
-    // Cập nhật tổng tiền trong orders
+    // Cập nhật tổng tiền trong orders + reset promo
     await db.query(
       `UPDATE orders 
-       SET total_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?)
-       WHERE order_id = ?`,
-      [order_id, order_id]
+   SET total_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?),
+       promo_id = NULL,
+       discount_amount = 0,
+       final_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?)
+   WHERE order_id = ?`,
+      [order_id, order_id, order_id]
     );
 
     return res.json({ message: "Thêm món vào giỏ hàng thành công" });
@@ -185,12 +188,15 @@ export const updateOrderItem = async (req, res) => {
       [quantity, newLineTotal, id]
     );
 
-    // Cập nhật tổng tiền order
+    // Cập nhật tổng tiền order + reset promo
     await db.query(
       `UPDATE orders 
-       SET total_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?)
-       WHERE order_id = ?`,
-      [orderItem.order_id, orderItem.order_id]
+   SET total_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?),
+       promo_id = NULL,
+       discount_amount = 0,
+       final_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?)
+   WHERE order_id = ?`,
+      [orderItem.order_id, orderItem.order_id, orderItem.order_id]
     );
 
     return res.json({ message: "Cập nhật món thành công" });
@@ -217,12 +223,15 @@ export const deleteOrderItem = async (req, res) => {
     // Xóa item
     await db.query("DELETE FROM order_items WHERE order_item_id=?", [id]);
 
-    // Cập nhật lại tổng tiền order
+    // Cập nhật lại tổng tiền order + reset promo
     await db.query(
       `UPDATE orders 
-       SET total_price = (SELECT COALESCE(SUM(line_total),0) FROM order_items WHERE order_id = ?)
-       WHERE order_id = ?`,
-      [orderItem.order_id, orderItem.order_id]
+   SET total_price = (SELECT COALESCE(SUM(line_total),0) FROM order_items WHERE order_id = ?),
+       promo_id = NULL,
+       discount_amount = 0,
+       final_price = (SELECT COALESCE(SUM(line_total),0) FROM order_items WHERE order_id = ?)
+   WHERE order_id = ?`,
+      [orderItem.order_id, orderItem.order_id, orderItem.order_id]
     );
 
     return res.json({ message: "Xóa món khỏi giỏ hàng thành công" });

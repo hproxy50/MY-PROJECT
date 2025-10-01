@@ -57,7 +57,9 @@ export const login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    return res.json({ message: "Đăng nhập thành công", token });
+    const { password: _, ...userWithoutPassword } = user;
+
+    return res.json({ message: "Đăng nhập thành công", token, user: userWithoutPassword, });// gửi thêm user để FE lấy role 
   } catch (error) {
     return res.status(500).json({ message: "Lỗi server", error });
   }

@@ -85,14 +85,15 @@ export const createPromotion = async (req, res) => {
     }
 
     // Kiểm tra branch_id
+    
+    if (!branch_id) return res.status(400).json({message:"Branch cannot be blank"})
+
     if (branch_id) {
       const [branchRows] = await db.query("SELECT * FROM branches WHERE branch_id = ?", [branch_id]);
       if (branchRows.length === 0) {
         return res.status(400).json({ message: "Chi nhánh không tồn tại" });
       }
-    } else {
-      branch_id = null; // toàn bộ chi nhánh
-    }
+    } 
 
     await db.query(
       `INSERT INTO promotions 

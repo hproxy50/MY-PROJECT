@@ -1,4 +1,7 @@
 // index.js
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -8,8 +11,8 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import branchRoutes from "./routes/branchRoutes.js";
 import importRoutes from "./routes/importRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
-
-
+import promoRoutes from "./routes/promoRoutes.js";
+import staffOrderRoutes from "./routes/staffOrdersRoutes.js";
 
 const app = express();
 
@@ -19,6 +22,7 @@ app.use(cors({
   origin: "http://localhost:5173", // FE React
   credentials: true
 }));
+
 
 
 app.use(express.json());
@@ -42,6 +46,9 @@ app.use("/import", importRoutes);
 
 app.use("/orders", orderRoutes);
 
+app.use("/promotion", promoRoutes);
+
+app.use("/staff", staffOrderRoutes);
 
 // error handler (basic)
 app.use((err, req, res, next) => {
