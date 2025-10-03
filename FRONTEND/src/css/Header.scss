@@ -1,0 +1,217 @@
+// Header.scss
+
+.header {
+  width: 100%;
+  position: sticky; // 👈 hoặc dùng fixed nếu muốn luôn hiển thị
+  top: 0;
+  z-index: 1000; // 👈 Đảm bảo hiển thị trên mọi phần tử khác
+  
+  // ===== PHẦN HEADER TRÊN =====
+  &-Top {
+    background-color: #2f1110;
+    display: flex; // Sử dụng flexbox để căn chỉnh 3 phần: Left, Middle, Right
+    align-items: center; // Căn giữa theo chiều dọc
+    justify-content: space-between; // Phân bổ đều khoảng cách giữa các phần
+    padding: 15px 40px; // Thêm padding cho header top
+    gap: 30px; // Khoảng cách giữa các phần tử con
+
+    // --- Logo và tên thương hiệu (bên trái) ---
+    &-Left {
+      display: flex;
+      align-items: center;
+      gap: 15px; // Khoảng cách giữa logo và text
+      min-width: 200px; // Đảm bảo phần logo có độ rộng tối thiểu
+
+      img {
+        width: 80px; // Điều chỉnh kích thước logo cho phù hợp với thiết kế
+        height: 80px;
+        object-fit: contain; // Giữ tỷ lệ ảnh
+      }
+
+      p {
+        color: #ffffff; // Màu chữ trắng
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0; // Xóa margin mặc định
+        white-space: nowrap; // Không cho text xuống dòng
+      }
+    }
+
+    // --- Thanh tìm kiếm (ở giữa) ---
+    &-Middle {
+      flex: 1; // Cho phép phần này chiếm hết không gian còn lại
+      max-width: 700px; // Giới hạn độ rộng tối đa của search bar
+      display: flex;
+      position: relative; // Để định vị button search bên trong
+
+      .searchBar {
+        width: 100%; // Chiếm toàn bộ chiều rộng
+        padding: 12px 50px 12px 20px; // Padding: trên/dưới 12px, phải 50px (chừa chỗ cho icon), trái 20px
+        border: none;
+        border-radius: 25px; // Bo tròn góc để tạo hình viên thuốc
+        font-size: 15px;
+        outline: none; // Xóa viền khi focus
+        background-color: #f5f5dc; // Màu nền be nhạt như trong hình
+        color: #333;
+
+        &::placeholder {
+          color: #999; // Màu chữ placeholder
+        }
+      }
+
+      .searchButton {
+        position: absolute; // Đặt button bên trong input
+        right: 8px; // Cách mép phải 8px
+        top: 50%; // Căn giữa theo chiều dọc
+        transform: translateY(-50%); // Dịch lên 50% chiều cao của chính nó để căn giữa hoàn hảo
+        background: transparent; // Nền trong suốt
+        border: none;
+        cursor: pointer; // Con trỏ chuột dạng pointer
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.2s; // Hiệu ứng chuyển đổi mượt mà
+
+        &:hover {
+          opacity: 0.7; // Giảm độ mờ khi hover
+        }
+
+        .searchIcon {
+          color: #333; // Màu icon tìm kiếm
+        }
+      }
+    }
+
+    // --- Tư vấn và giỏ hàng (bên phải) ---
+    &-Right {
+      display: flex;
+      align-items: center;
+      gap: 20px; // Khoảng cách giữa text và icon
+      min-width: 150px; // Đảm bảo độ rộng tối thiểu
+      justify-content: flex-end; // Căn về bên phải
+
+      p {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 500;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      svg {
+        color: #ffffff; // Màu icon giỏ hàng là trắng
+        cursor: pointer;
+        transition: transform 0.2s; // Hiệu ứng chuyển đổi
+
+        &:hover {
+          transform: scale(1.1); // Phóng to nhẹ khi hover
+        }
+      }
+    }
+  }
+
+  // ===== PHẦN HEADER DƯỚI (MENU ĐIỀU HƯỚNG) =====
+  &-Bottom {
+    background-color: #601d1b;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 40px; // Padding nhỏ hơn header top
+
+    // --- Menu điều hướng (bên trái) ---
+    &-Left {
+      ul {
+        display: flex;
+        list-style: none; // Xóa dấu chấm đầu dòng
+        margin: 0;
+        padding: 0;
+        gap: 35px; // Khoảng cách giữa các menu item
+
+        li {
+          color: #ffffff;
+          font-size: 14px;
+          font-weight: 500;
+          text-transform: uppercase; // Chữ in hoa như trong thiết kế
+          cursor: pointer;
+          position: relative; // Để tạo hiệu ứng underline
+          transition: color 0.3s; // Hiệu ứng chuyển màu mượt mà
+          white-space: nowrap; // Không cho text xuống dòng
+
+          // Hiệu ứng gạch chân khi hover
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #ffffff;
+            transition: width 0.3s ease; // Hiệu ứng mở rộng gạch chân
+          }
+
+          &:hover {
+            color: #f5f5dc; // Đổi màu chữ khi hover
+            
+            &::after {
+              width: 100%; // Gạch chân mở rộng toàn bộ chiều rộng
+            }
+          }
+        }
+      }
+    }
+
+    // --- Số điện thoại (bên phải) ---
+    &-Right {
+      display: flex;
+      align-items: center;
+      gap: 10px; // Khoảng cách giữa icon và số điện thoại
+
+      .PhoneIcon {
+        color: #ffffff;
+      }
+
+      p {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: 1px; // Tăng khoảng cách giữa các chữ số
+      }
+    }
+  }
+}
+
+// // ===== RESPONSIVE CHO MOBILE =====
+// @media (max-width: 768px) {
+//   .header {
+//     &-Top {
+//       flex-direction: column; // Xếp dọc trên mobile
+//       padding: 15px 20px;
+//       gap: 15px;
+
+//       &-Left,
+//       &-Middle,
+//       &-Right {
+//         width: 100%; // Chiếm toàn bộ chiều rộng
+//         justify-content: center;
+//       }
+
+//       &-Middle {
+//         max-width: 100%;
+//       }
+//     }
+
+//     &-Bottom {
+//       flex-direction: column;
+//       padding: 15px 20px;
+//       gap: 15px;
+
+//       &-Left ul {
+//         flex-wrap: wrap; // Cho phép menu xuống dòng
+//         justify-content: center;
+//         gap: 15px;
+//       }
+//     }
+//   }
+// }

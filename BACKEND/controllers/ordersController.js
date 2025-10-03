@@ -113,6 +113,68 @@ export const confirmOrder = async (req, res) => {
   }
 };
 
+// ================= XÁC NHẬN ĐẶT ĐƠN QR =================
+export const confirmOrderQR = async (req, res) => {
+  try {
+    const { id } = req.params; // order_id
+    const userId = req.user.user_id;
+    const {
+      customer_name,
+      customer_phone,
+      order_type,
+      scheduled_time,
+      delivery_address,
+      payment_method,
+    } = req.body;
+
+    // Validate order
+    const [orders] = await db.query(
+      `SELECT * FROM orders WHERE order_id = ? AND user_id = ? AND status = 'DRAFT'`,
+      [id, userId]
+    );
+    if (orders.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy giỏ hàng để xác nhận" });
+    }
+
+    // Validate dữ liệu theo order_type
+    if (
+      (order_type === "DINE_IN" || order_type === "TAKEAWAY") &&
+      !scheduled_time
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng chọn giờ cho DINE_IN hoặc TAKEAWAY" });
+    }
+    if (order_type === "DELIVERY" && !delivery_address) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng nhập địa chỉ giao hàng" });
+    }
+
+    await db.query(
+      `UPDATE orders 
+       SET customer_name=?, customer_phone=?, 
+           order_type=?, scheduled_time=?, delivery_address=?, 
+           payment_method=? 
+       WHERE order_id=?`,
+      [
+        customer_name,
+        customer_phone,
+        order_type,
+        scheduled_time || null,
+        delivery_address || null,
+        payment_method,
+        id,
+      ]
+    );
+
+  } catch (error) {
+    return res.status(500).json({ message: "Lỗi server", error });
+  }
+};
+
 // ================ USE PROMOTION AND COUNTING PRICE ===========================
 
 export const applyPromotion = async (req, res) => {
@@ -174,40 +236,6 @@ export const applyPromotion = async (req, res) => {
     return res.status(500).json({ message: "Lỗi server", error: err });
   }
 };
-
-// // ================= TẠO QR THANH TOÁN VIETQR =================
-// export const createVietQRPayment = async (req, res) => {
-//   try {
-//     const { id } = req.params; // order_id
-//     const userId = req.user.user_id;
-
-//     // Lấy order
-//     const [orders] = await db.query(
-//       `SELECT * FROM orders WHERE order_id=? AND user_id=? AND status='DRAFT'`,
-//       [id, userId]
-//     );
-//     if (orders.length === 0) {
-//       return res.status(404).json({ message: "Không tìm thấy giỏ hàng để thanh toán" });
-//     }
-//     const order = orders[0];
-
-//     // Config tài khoản nhận tiền
-//     const BANK_CODE = "BIDV"; // Vietcombank
-//     const ACCOUNT_NO = "2170928129"; // STK nhận tiền
-//     const ACCOUNT_NAME = "NGUYEN PHUC HUNG"; // Chủ tài khoản
-
-//     // Nội dung chuyển khoản
-//     const addInfo = `Thanh toan don hang #${order.order_id}`;
-
-//     // QR link từ VietQR
-//     const qrUrl = `https://img.vietqr.io/image/${BANK_CODE}-${ACCOUNT_NO}-qr_only.png?amount=${order.final_price}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
-
-//     return res.json({ qrUrl, amount: order.final_price, addInfo });
-//   } catch (error) {
-//     console.error("Lỗi VietQR:", error);
-//     return res.status(500).json({ message: "Lỗi tạo QR VietQR", error });
-//   }
-// };
 
 // ================= TẠO THANH TOÁN BẰNG PAYOS =================
 export const createPayOSPayment = async (req, res) => {

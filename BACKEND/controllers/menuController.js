@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import { upload } from "../middlewares/uploadMiddlewares.js";
 
 // ================= LẤY DANH SÁCH MÓN ĂN THEO CHI NHÁNH =================
 export const getMenuItems = async (req, res) => {
@@ -11,7 +12,21 @@ export const getMenuItems = async (req, res) => {
     }
 
     const [rows] = await db.query(
-      "SELECT item_id, name, image, category_id, description, price, is_available, branch_id, created_at FROM menu_items WHERE branch_id = ?",
+      `SELECT 
+     mi.item_id, 
+     mi.name, 
+     mi.image, 
+     mi.category_id,
+     c.food_type,
+     mi.description, 
+     mi.price, 
+     mi.is_available, 
+     mi.stock_quantity, 
+     mi.branch_id, 
+     mi.created_at
+   FROM menu_items mi
+   JOIN category c ON mi.category_id = c.category_id
+   WHERE mi.branch_id = ?`,
       [branchId]
     );
 
@@ -55,15 +70,21 @@ export const createMenuItem = async (req, res) => {
   try {
     let {
       name,
-      image,
       category_id,
       description,
       price,
       is_available,
       stock_quantity,
     } = req.body;
-    
-    const branchId = req.user.role === "STAFF" ? req.user.branch_id : req.body.branch_id;
+
+    // Ảnh lấy từ file upload
+    let image = null;
+    if (req.file) {
+      image = `/uploads/${req.file.filename}`;
+    }
+
+    const branchId =
+      req.user.role === "STAFF" ? req.user.branch_id : req.body.branch_id;
 
     if (!branchId) {
       return res.status(400).json({ message: "Thiếu branch_id" });
@@ -83,7 +104,7 @@ export const createMenuItem = async (req, res) => {
           is_available = 1;
         }
       }
-    } 
+    }
 
     // Validate
     if (!name)
@@ -131,6 +152,7 @@ export const createMenuItem = async (req, res) => {
         .json({ message: "Không có quyền sử dụng category này" });
     }
 
+    // Insert DB
     await db.query(
       "INSERT INTO menu_items (name, image, category_id, description, price, branch_id, stock_quantity, is_available, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
       [
@@ -139,9 +161,9 @@ export const createMenuItem = async (req, res) => {
         category_id,
         description,
         price,
-        branchId,
+        req.user.branch_id,
         stock_quantity,
-        is_available,
+        is_available ?? 1,
       ]
     );
 
@@ -153,17 +175,22 @@ export const createMenuItem = async (req, res) => {
 
 // ================= CẬP NHẬT MÓN ĂN =================
 export const updateMenuItem = async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
     let {
       name,
-      image,
       category_id,
       description,
       price,
       is_available,
       stock_quantity,
     } = req.body;
+
+    // Ảnh lấy từ file upload
+    let image = null;
+    if (req.file) {
+      image = `/uploads/${req.file.filename}`;
+    }
 
     // Lấy dữ liệu cũ
     const [rows] = await db.query(
@@ -269,16 +296,19 @@ export const updateMenuItem = async (req, res) => {
     }
 
     // Update DB
+    // Insert DB
     await db.query(
-      "UPDATE menu_items SET name=?, image=?, category_id=?, description=?, price=?, is_available=?, stock_quantity=? WHERE item_id=?",
+      `UPDATE menu_items
+    SET name=?, image=?, category_id=?, description=?, price=?, stock_quantity=?, is_available=? 
+    WHERE item_id=?`,
       [
         name,
         image,
         category_id,
         description,
         price,
-        is_available,
         stock_quantity,
+        is_available,
         id,
       ]
     );

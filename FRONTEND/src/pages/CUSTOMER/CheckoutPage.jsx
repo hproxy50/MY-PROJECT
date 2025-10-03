@@ -60,6 +60,16 @@ export default function CheckoutPage() {
     }
   };
 
+    const handleConfirmQR = async () => {
+    try {
+      await API.post(`/orders/${orderId}/confirmQR`, form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      alert(err.response?.data?.message || "Lỗi khi đặt đơn");
+    }
+  };
+
   // Lấy danh sách promo khi load trang checkout
   useEffect(() => {
     const fetchPromos = async () => {
@@ -258,6 +268,7 @@ export default function CheckoutPage() {
           if (form.payment_method === "CASH") {
             await handleConfirm();
           } else if (form.payment_method === "QR") {
+            await handleConfirmQR();
             try {
               const res = await API.post(
                 `/orders/${orderId}/payment-payos`,

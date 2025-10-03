@@ -13,6 +13,7 @@ import importRoutes from "./routes/importRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import promoRoutes from "./routes/promoRoutes.js";
 import staffOrderRoutes from "./routes/staffOrdersRoutes.js";
+import { upload } from "./middlewares/uploadMiddlewares.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use(cors({
 }));
 
 
+app.use("/uploads", express.static("uploads"));
 
 app.use(express.json());
 

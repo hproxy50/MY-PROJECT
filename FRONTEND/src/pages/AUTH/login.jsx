@@ -25,7 +25,7 @@ export default function Login() {
       } else if (role === "ADMIN") {
         navigate("/admin/dashboard");
       } else if (role === "CUSTOMER") {
-        navigate("/menu");
+        navigate("/branches");
       } else {
         setError("Không xác định được vai trò người dùng");
       }

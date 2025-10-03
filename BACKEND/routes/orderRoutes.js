@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.get("/:id/checkout",verifyToken, getCheckoutInfo);
 router.post("/:id/confirm",verifyToken, confirmOrder);
+router.post("/:id/confirmQR",verifyToken, confirmOrder);
 router.post("/:id/apply-promo", verifyToken, applyPromotion);
 
 // Tạo link thanh toán PayOS
