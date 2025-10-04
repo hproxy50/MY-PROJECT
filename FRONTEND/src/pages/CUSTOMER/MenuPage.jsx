@@ -31,7 +31,7 @@ export default function MenuPage() {
         { order_id: orderId, item_id: itemId, quantity: 1 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("✅ Đã thêm vào giỏ");
+      alert("Đã thêm vào giỏ");
     } catch (err) {
       alert(err.response?.data?.message || "Không thể thêm vào giỏ hàng");
       console.error(err);
@@ -73,7 +73,7 @@ export default function MenuPage() {
         <div className="text-end">
           <button
             className="btn btn-outline-primary"
-            onClick={() => navigate(`/cart/${orderId}`)}
+            onClick={() => navigate(`/  /${orderId}`)}
           >
             🛒 Xem giỏ hàng
           </button>

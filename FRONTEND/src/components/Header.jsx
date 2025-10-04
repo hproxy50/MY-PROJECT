@@ -1,10 +1,12 @@
 // src/components/Header.jsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { ShoppingCart, Search, Phone } from "lucide-react";
 import "../css/Header.scss";
 import LogoImage from "../assets/image/pizza.png";
 
-const Header = () => {
+const Header = ({ orderId, cartCount }) => {
+    const navigate = useNavigate();
   return (
     <header className="header">
       <div className="header-Top">
@@ -29,7 +31,21 @@ const Header = () => {
         </div>
         <div className="header-Top-Right">
           <p>Service</p>
-          <ShoppingCart alt="shoppingCart" color="black" size={20} />
+                  <div className="text-end">
+          
+        </div>
+        <button
+            className="btn btn-outline-primary"
+            onClick={() => navigate(`/cart/${orderId}`)}
+            disabled={!orderId} // chưa có orderId thì disable
+          >
+             {cartCount > 0 && (
+              <span className="position-absolute top-50 start-90 translate-middle badge rounded-pill bg-danger">
+                {cartCount}
+              </span>
+            )}
+             <ShoppingCart alt="shoppingCart" color="white" size={20} />
+          </button>
         </div>
       </div>
       <div className="header-Bottom">

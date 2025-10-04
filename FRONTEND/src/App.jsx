@@ -11,6 +11,7 @@ import StaffIncomingOrders from "./pages/STAFF/StaffIncomingOrders";
 import StaffPreparingOrders from "./pages/STAFF/StaffPreparingOrders";
 import CartPage from "./pages/CUSTOMER/CartPage";
 import Menu from "./pages/CUSTOMER/Menu";
+import CategoryCRUD from "./pages/STAFF/CategoryCRUD";
 
 function App() {
   return (
@@ -34,6 +35,15 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["STAFF"]}>
             <MenuCRUD />
+          </ProtectedRoute>
+        }
+      />
+
+       <Route
+        path="/staff/category-crud"
+        element={
+          <ProtectedRoute allowedRoles={["STAFF"]}>
+            <CategoryCRUD />
           </ProtectedRoute>
         }
       />
