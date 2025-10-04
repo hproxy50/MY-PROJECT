@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/AUTH/login";
 import Register from "./pages/AUTH/register";
-import MenuPage from "./pages/CUSTOMER/MenuPage";
 import BranchSelectPage from "./pages/CUSTOMER/BranchSelectPage";
 import CheckoutPage from "./pages/CUSTOMER/CheckoutPage";
 import MenuCRUD from "./pages/STAFF/MenuCRUD";
@@ -11,10 +10,12 @@ import AdminDashboard from "./pages/ADMIN/AdminDashboard";
 import StaffIncomingOrders from "./pages/STAFF/StaffIncomingOrders";
 import StaffPreparingOrders from "./pages/STAFF/StaffPreparingOrders";
 import CartPage from "./pages/CUSTOMER/CartPage";
+import Menu from "./pages/CUSTOMER/Menu";
 
 function App() {
   return (
     <Routes>
+
       {/* ALL USERS */}
       <Route path="/" element={<Navigate to="/login" />} />
       <Route path="/login" element={<Login />} />
@@ -23,7 +24,7 @@ function App() {
 
       {/* CUSTOMER */}
       <Route path="/branches" element={<BranchSelectPage />} />
-      <Route path="/menu/:branchId/:orderId" element={<MenuPage />} />
+      <Route path="/menu/:branchId/:orderId" element={<Menu/>} />
       <Route path="/cart/:orderId" element={<CartPage />}  />
       <Route path="/checkout/:orderId" element={<CheckoutPage />} />
 

@@ -2,9 +2,9 @@
 
 .header {
   width: 100%;
-  position: sticky; // 👈 hoặc dùng fixed nếu muốn luôn hiển thị
+  position: sticky; 
   top: 0;
-  z-index: 1000; // 👈 Đảm bảo hiển thị trên mọi phần tử khác
+  z-index: 1000;
   
   // ===== PHẦN HEADER TRÊN =====
   &-Top {
@@ -37,7 +37,7 @@
       }
     }
 
-    // --- Thanh tìm kiếm (ở giữa) ---
+
     &-Middle {
       flex: 1; // Cho phép phần này chiếm hết không gian còn lại
       max-width: 700px; // Giới hạn độ rộng tối đa của search bar
@@ -182,7 +182,6 @@
   }
 }
 
-// // ===== RESPONSIVE CHO MOBILE =====
 // @media (max-width: 768px) {
 //   .header {
 //     &-Top {
