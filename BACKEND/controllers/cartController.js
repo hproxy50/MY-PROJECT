@@ -132,7 +132,7 @@ export const getOrderById = async (req, res) => {
 
     // Lấy danh sách món trong giỏ
     const [items] = await db.query(
-      `SELECT oi.order_item_id, oi.item_id, m.name, oi.quantity, oi.unit_price, oi.line_total
+      `SELECT oi.order_item_id, oi.item_id, m.name, m.image, m.description, oi.quantity, oi.unit_price, oi.line_total
        FROM order_items oi
        JOIN menu_items m ON oi.item_id = m.item_id
        WHERE oi.order_id = ?`,

@@ -9,9 +9,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/ADMIN/AdminDashboard";
 import StaffIncomingOrders from "./pages/STAFF/StaffIncomingOrders";
 import StaffPreparingOrders from "./pages/STAFF/StaffPreparingOrders";
-import CartPage from "./pages/CUSTOMER/CartPage";
 import Menu from "./pages/CUSTOMER/Menu";
 import CategoryCRUD from "./pages/STAFF/CategoryCRUD";
+import Cart from "./pages/CUSTOMER/Cart";
+import CartPage from "./pages/CUSTOMER/CartPage";
 
 function App() {
   return (
@@ -26,7 +27,7 @@ function App() {
       {/* CUSTOMER */}
       <Route path="/branches" element={<BranchSelectPage />} />
       <Route path="/menu/:branchId/:orderId" element={<Menu/>} />
-      <Route path="/cart/:orderId" element={<CartPage />}  />
+      <Route path="/cart/:orderId" element={<Cart/>}  />
       <Route path="/checkout/:orderId" element={<CheckoutPage />} />
 
       {/* STAFF */}
