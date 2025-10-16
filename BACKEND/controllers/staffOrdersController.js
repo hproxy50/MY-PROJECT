@@ -23,11 +23,11 @@ export const getOrdersForStaff = async (req, res) => {
       `SELECT o.*, 
               u.name AS customer_name, u.phone AS customer_phone, 
               b.name AS branch_name, b.address AS branch_address
-       FROM orders o
-       JOIN users u ON o.user_id = u.user_id
-       JOIN branches b ON o.branch_id = b.branch_id
-       WHERE o.branch_id = ? AND o.status IN (?)
-       ORDER BY o.created_at DESC`,
+      FROM orders o
+      JOIN users u ON o.user_id = u.user_id
+      JOIN branches b ON o.branch_id = b.branch_id
+      WHERE o.branch_id = ? AND o.status IN (?)
+      ORDER BY o.created_at DESC`,
       [staffBranchId, statuses]
     );
 

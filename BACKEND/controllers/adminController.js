@@ -89,15 +89,24 @@ export const createCustomer = async (req, res) => {
 // ================= TẠO STAFF MỚI =================
 export const createStaff = async (req, res) => {
   try {
-    let { name, email, password, phone, branch_id } = req.body;
+    let { name, email, password, phone, branch_id, role } = req.body;
 
     // Trim chuỗi nếu là string
     if (typeof name === "string") name = name.trim();
     if (typeof email === "string") email = email.trim();
     if (typeof phone === "string") phone = phone.trim();
+    if (typeof role === "string") role = role.trim();
+    if (typeof branch_id === "string") branch_id = branch_id.trim();
 
     // Kiểm tra chuỗi rỗng hoặc toàn khoảng trắng
-    for (let [key, value] of Object.entries({ name, email, password, phone })) {
+    for (let [key, value] of Object.entries({
+      name,
+      email,
+      password,
+      phone,
+      role,
+      branch_id
+    })) {
       if (
         value === undefined ||
         (typeof value === "string" && value.trim() === "")
@@ -134,18 +143,23 @@ export const createStaff = async (req, res) => {
       [branch_id]
     );
     if (branch.length === 0) {
-      return res.status(400).json({ message: "Chi nhánh không tồn tại" });
+      return res.status(400).json({ message: "Invalid branch" });
+    }
+
+    const allowedRoles = ["STAFF", "CHEF", "SHIPPER"];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
     }
 
     // Hash mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await db.query(
-      "INSERT INTO users (name, email, password, phone, role, branch_id, created_at) VALUES (?, ?, ?, ?, 'STAFF', ?, NOW())",
-      [name, email, hashedPassword, phone, branch_id]
+      "INSERT INTO users (name, email, password, phone, role, branch_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+      [name, email, hashedPassword, phone, role, branch_id]
     );
 
-    return res.status(201).json({ message: "Tạo staff thành công" });
+    return res.status(201).json({ message: `Tạo '${role}' thành công` });
   } catch (error) {
     return res.status(500).json({ message: "Lỗi server", error });
   }
@@ -228,7 +242,7 @@ export const updateCustomer = async (req, res) => {
     if (noChange) {
       return res
         .status(400)
-        .json({ message: "Không có thông tin nào được thay đổi" });
+        .json({ message: "No info change" });
     }
 
     // Cập nhật DB
@@ -247,14 +261,14 @@ export const updateCustomer = async (req, res) => {
 export const updateStaff = async (req, res) => {
   try {
     const { id } = req.params;
-    let { name, email, password, phone, branch_id } = req.body;
+    let { name, email, password, phone, branch_id, role } = req.body;
 
     // Kiểm tra user tồn tại
     const [rows] = await db.query("SELECT * FROM users WHERE user_id = ?", [
       id,
     ]);
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy user" });
+      return res.status(404).json({ message: "Can't find that staff" });
     }
     const oldData = rows[0];
 
@@ -262,9 +276,11 @@ export const updateStaff = async (req, res) => {
     if (typeof name === "string") name = name.trim();
     if (typeof email === "string") email = email.trim();
     if (typeof phone === "string") phone = phone.trim();
+    if (typeof role === "string")  role = role.trim();
+    if (typeof branch_id === "string") branch_id = branch_id.trim();
 
     // Kiểm tra chuỗi rỗng hoặc toàn khoảng trắng
-    for (let [key, value] of Object.entries({ name, email, password, phone })) {
+    for (let [key, value] of Object.entries({ name, email, password, phone, role, branch_id })) {
       if (
         value !== undefined &&
         typeof value === "string" &&
@@ -300,6 +316,12 @@ export const updateStaff = async (req, res) => {
       }
     }
 
+    
+    const allowedRoles = ["STAFF", "CHEF", "SHIPPER"];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
     // Nếu có truyền branch_id → kiểm tra branch có tồn tại
     if (branch_id !== undefined && branch_id !== oldData.branch_id) {
       const [branch] = await db.query(
@@ -316,7 +338,7 @@ export const updateStaff = async (req, res) => {
     email = email || oldData.email;
     phone = phone || oldData.phone;
     branch_id = branch_id || oldData.branch_id;
-
+    
     let hashedPassword = oldData.password;
     if (password) {
       hashedPassword = await bcrypt.hash(password, 10);

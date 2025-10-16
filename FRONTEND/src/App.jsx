@@ -12,7 +12,8 @@ import StaffPreparingOrders from "./pages/STAFF/StaffPreparingOrders";
 import Menu from "./pages/CUSTOMER/Menu";
 import CategoryCRUD from "./pages/STAFF/CategoryCRUD";
 import Cart from "./pages/CUSTOMER/Cart";
-import CartPage from "./pages/CUSTOMER/CartPage";
+import Checkout from "./pages/CUSTOMER/Checkout"
+
 
 function App() {
   return (
@@ -23,12 +24,13 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+      {/* <Route path="/checkout" element={<Checkout />} /> */}
 
       {/* CUSTOMER */}
       <Route path="/branches" element={<BranchSelectPage />} />
       <Route path="/menu/:branchId/:orderId" element={<Menu/>} />
       <Route path="/cart/:orderId" element={<Cart/>}  />
-      <Route path="/checkout/:orderId" element={<CheckoutPage />} />
+      <Route path="/checkout/:orderId" element={<Checkout />} />
 
       {/* STAFF */}
       <Route

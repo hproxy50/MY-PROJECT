@@ -13,6 +13,8 @@ export default function Menu() {
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const [showMenuInfoModal, setshowMenuInfoModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   //GET CATEGORY
   useEffect(() => {
@@ -53,7 +55,6 @@ export default function Menu() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCartCount((prev) => prev + 1);
-      //alert("Order to cart success");
     } catch (err) {
       alert(err.response?.data?.message || "Cannot add to cart");
       console.error(err);
@@ -159,7 +160,11 @@ export default function Menu() {
                             <div className="product-button">
                               <button
                                 className="product-order"
-                                onClick={() => handleAddToCart(item.item_id)}
+                                // onClick={() => handleAddToCart(item.item_id)}
+                                onClick={() => {
+                                  setSelectedItem(item),
+                                    setshowMenuInfoModal(true);
+                                }}
                               >
                                 Order now
                               </button>
@@ -177,6 +182,77 @@ export default function Menu() {
           </div>
         </div>
       </div>
+      {/* {showMenuInfoModal && selectedItem && (
+        <div
+          className="modal-info"
+          onClick={() => setshowMenuInfoModal(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <span
+              className="modal-close"
+              onClick={() => setshowMenuInfoModal(false)}
+            >
+              &times;
+            </span>
+            <div className="modal-body">
+              <h2>{selectedItem.name}</h2>
+              {selectedItem.image ? (
+                <img
+                  src={`http://localhost:3000${selectedItem.image}`}
+                  alt={selectedItem.name}
+                  style={{
+                    width: "100%",
+                    maxHeight: "300px",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <p>No image</p>
+              )}
+              <p>Type: {selectedItem.food_type}</p>
+              <p>
+                Price: {Number(selectedItem.price).toLocaleString("vi-VN")} đ
+              </p>
+              <button
+                onClick={() => {
+                  handleAddToCart(selectedItem.item_id);
+                  setshowMenuInfoModal(false);
+                }}
+              >
+                Add to Cart
+              </button>
+            </div>
+          </div>
+        </div>
+      )} */}
+      {showMenuInfoModal && selectedItem && (
+        <div className="modal-info" onClick={() => setshowMenuInfoModal(false)}>
+          <div
+            className="modal-info-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-info-content-header">
+              <div className="modal-title">
+                <p>Select product</p>
+              </div>
+              <div
+                className="modal-btnClose"
+                onClick={() => setshowMenuInfoModal(false)}
+              >
+                X
+              </div>
+            </div>
+            <div className="modal-info-content-body">
+              <div className="modal-info-content-body-left">
+                DCMM
+              </div>
+              <div className="modal-info-content-body-right">
+                NHU CL TAO
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

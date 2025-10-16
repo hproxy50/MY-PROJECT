@@ -61,6 +61,7 @@ export const confirmOrder = async (req, res) => {
       scheduled_time,
       delivery_address,
       payment_method,
+      message,
     } = req.body;
 
     // Validate order
@@ -94,7 +95,8 @@ export const confirmOrder = async (req, res) => {
        SET status='PENDING', 
            customer_name=?, customer_phone=?, 
            order_type=?, scheduled_time=?, delivery_address=?, 
-           payment_method=? 
+           payment_method=?,
+           message=? 
        WHERE order_id=?`,
       [
         customer_name,
@@ -103,6 +105,7 @@ export const confirmOrder = async (req, res) => {
         scheduled_time || null,
         delivery_address || null,
         payment_method,
+        message||null,
         id,
       ]
     );
@@ -125,6 +128,7 @@ export const confirmOrderQR = async (req, res) => {
       scheduled_time,
       delivery_address,
       payment_method,
+      message,
     } = req.body;
 
     // Validate order
@@ -157,7 +161,8 @@ export const confirmOrderQR = async (req, res) => {
       `UPDATE orders 
        SET customer_name=?, customer_phone=?, 
            order_type=?, scheduled_time=?, delivery_address=?, 
-           payment_method=? 
+           payment_method=?,
+           message=?
        WHERE order_id=?`,
       [
         customer_name,
@@ -166,6 +171,7 @@ export const confirmOrderQR = async (req, res) => {
         scheduled_time || null,
         delivery_address || null,
         payment_method,
+        message||null,
         id,
       ]
     );
@@ -258,7 +264,7 @@ export const createPayOSPayment = async (req, res) => {
     const response = await payos.paymentRequests.create({
       orderCode: order.order_id,
       amount,
-      description: `Thanh toán đơn hàng #${order.order_id}`,
+      description: `Order payment #${order.order_id}`,
       returnUrl: `http://localhost:5173/payment-success?orderId=${order.order_id}`,
       cancelUrl: `http://localhost:5173/payment-cancel?orderId=${order.order_id}`,
     });
@@ -268,7 +274,7 @@ export const createPayOSPayment = async (req, res) => {
     console.error("Lỗi PayOS:", error.response?.data || error.message || error);
     res
       .status(500)
-      .json({ message: "Thanh toán thất bại", error: error.message });
+      .json({ message: "Payment failed", error: error.message });
   }
 };
 
@@ -279,23 +285,20 @@ export const payOSWebhook = async (req, res) => {
 
     const data = req.body;
 
-    // 1. Verify signature
+    //Verify signature
     const verified = await payos.webhooks.verify(data, req.headers["x-signature"]);
     if (!verified) {
       return res.status(400).json({ message: "Invalid signature" });
     }
 
-    // 2. Lấy orderCode từ webhook
+    //Get orderCode from webhook
     const orderCode = data.data?.orderCode;
 
-    // 3. Xử lý theo kết quả thanh toán
     if (data.code === "00" && data.success) {
-      // Thanh toán thành công
       await db.query(`UPDATE orders SET status='PAID' WHERE order_id=? AND status='DRAFT'`, [
         orderCode,
       ]);
     } else {
-      // Nếu có hủy thanh toán hoặc thất bại thì update CANCELLED
       await db.query(`UPDATE orders SET status='CANCELLED' WHERE order_id=?`, [
         orderCode,
       ]);
