@@ -5,7 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import API from "../../api/api";
 import Header from "../../components/Header";
 import "../../css/cart.scss";
-import Empty from "../../assets/image/empty.jpg"
+import Empty from "../../assets/image/empty.jpg";
 
 export default function Cart() {
   const { orderId } = useParams();
@@ -149,8 +149,14 @@ export default function Cart() {
                 <div className="body-right">
                   <div className="cart-detail">
                     <div className="cart-detail-top">
-                      <h4>Cart({order.items.length} product)</h4>
-                      {/* <h4>Cart ({totalQuantity} product)</h4> */}
+                      <h4>
+                        Cart ({order.items.length} items /{" "}
+                        {order.items.reduce(
+                          (total, item) => total + item.quantity,
+                          0
+                        )}{" "}
+                        total)
+                      </h4>
                     </div>
                     <div className="cart-detail-middle">
                       <p>Total amount:</p>
@@ -225,5 +231,3 @@ export default function Cart() {
     </>
   );
 }
-
-

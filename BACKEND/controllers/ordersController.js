@@ -232,10 +232,13 @@ export const applyPromotion = async (req, res) => {
     );
 
     return res.json({
-      message: "Áp dụng mã giảm giá thành công",
+      //message: "Discount code applied successfully",
       order_id: id,
       discount,
+      total_price: order.total_price,
       final_price: finalPrice,
+      promo_id: promo.promo_id,
+      discount_amount: discount,
     });
   } catch (err) {
     console.error(err);

@@ -3,6 +3,7 @@ import API from "../../api/api";
 import { useParams, useNavigate } from "react-router-dom";
 import "../../css/Menu.scss";
 import Header from "../../components/Header";
+import product from "../../assets/image/product.jpg";
 
 export default function Menu() {
   const { branchId, orderId } = useParams();
@@ -244,10 +245,220 @@ export default function Menu() {
             </div>
             <div className="modal-info-content-body">
               <div className="modal-info-content-body-left">
-                DCMM
+                <h3>#Product name (L)</h3>
+                <p>Product Description</p>
+                <img src={product} alt="product-image" />
+                <p className="modal-price">Price: 240.000 d</p>
+                <div className="modal-info-content-body-left-quantity">
+                  <button
+                    className="modal-info-content-body-left-quantity-button"
+                    // onClick={() =>
+                    //   handleUpdateQty(item.order_item_id, item.quantity - 1)
+                    // }
+                  >
+                    −
+                  </button>
+                  <span className="modal-info-content-body-left-quantity-number">
+                    1{/* {item.quantity} */}
+                  </span>
+                  <button
+                    className="modal-info-content-body-left-quantity-btn"
+                    // onClick={() =>
+                    //   handleUpdateQty(item.order_item_id, item.quantity + 1)
+                    // }
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div className="modal-info-content-body-right">
-                NHU CL TAO
+                <div className="modal-info-content-body-right-topping">
+                  <div className="modal-info-content-body-right-topping-title">
+                    Chọn kích thước
+                  </div>
+                  <div className="modal-info-content-body-right-topping-notification">
+                    ( Thường R: 6 miếng 22cm | Lớn L: 8 miếng 30cm )
+                  </div>
+                  <div className="modal-info-content-body-right-topping-choosing">
+                    <div className="size-option">
+                      <input
+                        type="radio"
+                        id="size-m"
+                        name="pizza-size"
+                        value="R"
+                      />
+                      <div className="modal-info-content-body-right-topping-choosing-info">
+                        <label>R</label>
+                        <label>240.000d</label>
+                      </div>
+                    </div>
+                    <div className="size-option">
+                      <input
+                        type="radio"
+                        id="size-l"
+                        name="pizza-size"
+                        value="L"
+                      />
+                      <div className="modal-info-content-body-right-topping-choosing-info">
+                        <label>L</label>
+                        <label>300.000d</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-info-content-body-right-topping">
+                  <div className="modal-info-content-body-right-topping-title">
+                    Chọn đế
+                  </div>
+                  <div className="modal-info-content-body-right-topping-notification">
+                    {/* ( Thường R: 6 miếng 22cm | Lớn L: 8 miếng 30cm ) */}
+                  </div>
+                  <div className="modal-info-content-body-right-topping-choosing">
+                    <div className="size-option">
+                      <input
+                        type="radio"
+                        id="size-m"
+                        name="pizza-size"
+                        value="R"
+                      />
+                      <div className="modal-info-content-body-right-topping-choosing-info">
+                        <label>Mỏng</label>
+                        {/* <label>240.000d</label> */}
+                      </div>
+                    </div>
+                    <div className="size-option">
+                      <input
+                        type="radio"
+                        id="size-l"
+                        name="pizza-size"
+                        value="L"
+                      />
+                      <div className="modal-info-content-body-right-topping-choosing-info">
+                        <label>Dày</label>
+                        {/* <label>300.000d</label> */}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-info-content-body-right-topping">
+                  <div className="modal-info-content-body-right-topping-title">
+                    Thêm
+                  </div>
+                  <div className="modal-info-content-body-right-topping-notification">
+                  </div>
+                  <div className="modal-info-content-body-right-topping-choosing">
+                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
+                      <input type="checkbox" name="topping" value="phomat" />
+                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
+                        <label>Cheese</label>
+                        <label className="checkbox-price">30.000d</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-info-content-body-right-buy">
+                  <button className="modal-info-content-body-right-buy-button">
+                    OK
+                  </button>
+                </div>
               </div>
             </div>
           </div>

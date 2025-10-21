@@ -27,7 +27,8 @@ export default function Checkout() {
     scheduled_time: "",
     delivery_address: "",
     payment_method: "CASH",
-    message: "",
+    messageStore: "",
+    messageDelivery: "",
     district: "",
     ward: "",
     street: "",
@@ -70,16 +71,22 @@ export default function Checkout() {
       deliveryMethod === "delivery" &&
       (!form.ward.trim() || !form.street.trim())
     ) {
-      alert("Please fill in full ward/commune information and house number/street name.");
+      alert(
+        "Please fill in full ward/commune information and house number/street name."
+      );
       return;
     }
     try {
       const delivery_address =
         `${form.street}, ${form.ward}, ${form.district}`.trim();
-        const payload = {
-      ...form,
-      delivery_address, // <- THÊM VÀO
-    };
+      const payload = {
+        ...form,
+        delivery_address,
+        message:
+          deliveryMethod === "pickup"
+            ? form.messageStore
+            : form.messageDelivery,
+      };
       await API.post(`/orders/${orderId}/confirm`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -94,16 +101,22 @@ export default function Checkout() {
       deliveryMethod === "delivery" &&
       (!form.ward.trim() || !form.street.trim())
     ) {
-      alert("Please fill in full ward/commune information and house number/street name.");
+      alert(
+        "Please fill in full ward/commune information and house number/street name."
+      );
       return;
     }
     try {
       const delivery_address =
         `${form.street}, ${form.ward}, ${form.district}`.trim();
-        const payload = {
-      ...form,
-      delivery_address, // <- THÊM VÀO
-    };
+      const payload = {
+        ...form,
+        delivery_address,
+        message:
+          deliveryMethod === "pickup"
+            ? form.messageStore
+            : form.messageDelivery,
+      };
       await API.post(`/orders/${orderId}/confirmQR`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -112,7 +125,6 @@ export default function Checkout() {
     }
   };
 
-  // 1. Hàm lấy thời gian hiện tại (định dạng cho datetime-local)
   function getCurrentDateTimeLocal() {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // Local time
@@ -248,8 +260,9 @@ export default function Checkout() {
                         <input
                           type="text"
                           className="checkout-page-card-bottom-left-down-info-input2-message"
-                          name="customer_message"
-                          value={form.message}
+                          name="messageStore"
+                          onChange={handleChange}
+                          value={form.messageStore}
                         />
                       </div>
                     </div>
@@ -355,8 +368,8 @@ export default function Checkout() {
                         <label>Message for the delivery</label>
                         <input
                           type="text"
-                          name="message"
-                          value={form.message}
+                          name="messageDelivery"
+                          value={form.messageDelivery}
                           onChange={handleChange}
                           className="checkout-page-card-bottom-left-down-info-messageDelivery-input"
                         />
@@ -433,7 +446,14 @@ export default function Checkout() {
             <div className="checkout-page-card-bottom-right">
               <div className="checkout-page-card-bottom-right-top">
                 {/* <h4>Cart({order.items.length} product)</h4> */}
-                <h4>Cart 3 product</h4>
+                <h4>
+                  Cart ({checkoutData.items.length} items /{" "}
+                  {checkoutData.items.reduce(
+                    (total, item) => total + item.quantity,
+                    0
+                  )}{" "}
+                  total)
+                </h4>
                 <button onClick={() => navigate(`/cart/${orderId}`)}>
                   Change cart <SquarePen />
                 </button>
@@ -491,9 +511,13 @@ export default function Checkout() {
                           { promo_id: selectedPromo },
                           { headers: { Authorization: `Bearer ${token}` } }
                         );
-                        alert(res.data.message);
-                        // reload checkout info để hiển thị final_price
-                        window.location.reload();
+                        setCheckoutData((prev) => ({
+                          ...prev,
+                          discount_amount: res.data.discount_amount,
+                          final_price: res.data.final_price,
+                          promo_id: res.data.promo_id,
+                        }));
+                        setSelectedPromo(res.data.promo_id);
                       } catch (err) {
                         alert(err.response?.data?.message || "ERR");
                       }
