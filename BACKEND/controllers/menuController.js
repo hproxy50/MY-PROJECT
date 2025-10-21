@@ -52,15 +52,32 @@ export const getMenuItemById = async (req, res) => {
 
     const item = rows[0];
 
-    // STAFF chỉ xem được món ăn thuộc chi nhánh mình
     if (req.user.role === "STAFF" && item.branch_id !== req.user.branch_id) {
       return res
         .status(403)
         .json({ message: "Không có quyền xem món ăn của chi nhánh khác" });
     }
 
-    return res.json(item);
+    // Lấy option groups kèm choices
+    const [groups] = await db.query(
+      `SELECT og.group_id, og.name AS group_name, og.selection_type, og.is_required
+       FROM item_option_groups og
+       WHERE og.item_id = ?
+       ORDER BY og.sort_order`,
+      [id]
+    );
+
+    for (const g of groups) {
+      const [choices] = await db.query(
+        "SELECT choice_id, name AS choice_name, price_delta FROM item_option_choices WHERE group_id = ? ORDER BY sort_order",
+        [g.group_id]
+      );
+      g.choices = choices;
+    }
+
+    return res.json({ ...item, optionGroups: groups });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ message: "Lỗi server", error });
   }
 };
@@ -75,7 +92,18 @@ export const createMenuItem = async (req, res) => {
       price,
       is_available,
       stock_quantity,
+      optionsDef, 
     } = req.body;
+
+    if (typeof optionsDef === "string") {
+      try {
+        optionsDef = JSON.parse(optionsDef);
+      } catch (e) {
+        return res
+          .status(400)
+          .json({ message: "optionsDef không phải JSON hợp lệ" });
+      }
+    }
 
     // Ảnh lấy từ file upload
     let image = null;
@@ -94,19 +122,7 @@ export const createMenuItem = async (req, res) => {
     if (typeof name === "string") name = name.trim();
     if (typeof description === "string") description = description.trim();
 
-    // Nếu stock_quantity = 0 => is_available = 0 (hết hàng)
-    if (stock_quantity !== null && stock_quantity !== undefined) {
-      if (Number(stock_quantity) === 0) {
-        is_available = 0;
-      } else {
-        // Nếu có stock > 0 mà người dùng không truyền is_available => mặc định là 1
-        if (is_available === undefined) {
-          is_available = 1;
-        }
-      }
-    }
-
-    // Validate
+    // Validate cơ bản (giữ logic bạn đã có)
     if (!name)
       return res
         .status(400)
@@ -115,13 +131,9 @@ export const createMenuItem = async (req, res) => {
     if (!price || isNaN(price))
       return res.status(400).json({ message: "Giá món ăn phải là số hợp lệ" });
 
-    if (is_available !== undefined) {
-      is_available = Number(is_available) === 1 ? 1 : 0;
-    } else {
-      is_available = 1;
-    }
+    is_available =
+      is_available !== undefined ? (Number(is_available) === 1 ? 1 : 0) : 1;
 
-    // Nếu stock_quantity < 0 thì báo lỗi
     if (stock_quantity !== undefined && stock_quantity !== null) {
       stock_quantity = Number(stock_quantity);
       if (isNaN(stock_quantity) || stock_quantity < 0) {
@@ -129,11 +141,12 @@ export const createMenuItem = async (req, res) => {
           .status(400)
           .json({ message: "Số lượng phải là số >= 0 hoặc NULL" });
       }
+      if (stock_quantity === 0) is_available = 0;
     } else {
       stock_quantity = null;
     }
 
-    // Kiểm tra category_id hợp lệ
+    // Kiểm tra category_id hợp lệ (giữ code cũ)
     const [categoryRows] = await db.query(
       "SELECT * FROM category WHERE category_id = ?",
       [category_id]
@@ -152,8 +165,8 @@ export const createMenuItem = async (req, res) => {
         .json({ message: "Không có quyền sử dụng category này" });
     }
 
-    // Insert DB
-    await db.query(
+    // -------------- Insert menu_items --------------
+    const [result] = await db.query(
       "INSERT INTO menu_items (name, image, category_id, description, price, branch_id, stock_quantity, is_available, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
       [
         name,
@@ -161,14 +174,50 @@ export const createMenuItem = async (req, res) => {
         category_id,
         description,
         price,
-        req.user.branch_id,
+        branchId,
         stock_quantity,
         is_available ?? 1,
       ]
     );
 
-    return res.status(201).json({ message: "Thêm món ăn thành công" });
+    const itemId = result.insertId;
+
+    // -------------- Insert options nếu có --------------
+    // optionsDef expected: [{ name, selection_type: 'SINGLE'|'MULTI', is_required:0|1, choices: [{name, price_delta}] }, ...]
+    if (optionsDef && Array.isArray(optionsDef) && optionsDef.length > 0) {
+      for (let gi = 0; gi < optionsDef.length; gi++) {
+        const group = optionsDef[gi];
+        // Basic validation per group
+        if (!group.name) continue; // skip invalid group
+        const selType = group.selection_type === "MULTI" ? "MULTI" : "SINGLE";
+        const isReq = group.is_required ? 1 : 0;
+
+        const [gRes] = await db.query(
+          "INSERT INTO item_option_groups (item_id, name, selection_type, is_required, sort_order) VALUES (?, ?, ?, ?, ?)",
+          [itemId, group.name, selType, isReq, gi]
+        );
+        const groupId = gRes.insertId;
+
+        if (group.choices && Array.isArray(group.choices)) {
+          for (let ci = 0; ci < group.choices.length; ci++) {
+            const choice = group.choices[ci];
+            if (!choice || !choice.name) continue;
+            const delta =
+              choice.price_delta !== undefined ? Number(choice.price_delta) : 0;
+            await db.query(
+              "INSERT INTO item_option_choices (group_id, name, price_delta, sort_order) VALUES (?, ?, ?, ?)",
+              [groupId, choice.name, isNaN(delta) ? 0 : delta, ci]
+            );
+          }
+        }
+      }
+    }
+
+    return res
+      .status(201)
+      .json({ message: "Thêm món ăn thành công", item_id: itemId });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ message: "Lỗi server", error });
   }
 };
