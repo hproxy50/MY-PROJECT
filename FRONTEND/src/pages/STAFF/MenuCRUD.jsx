@@ -203,9 +203,7 @@ export default function MenuCRUD() {
         data.append("image", formData.image);
       }
 
-      // append optionsDef if any
-      if (Array.isArray(optionsDef) && optionsDef.length > 0) {
-        // Normalise: ensure price_delta numbers and non-empty group names
+      if (Array.isArray(optionsDef)) {
         const cleaned = optionsDef
           .map((g) => ({
             name: (g.name || "").trim(),
@@ -220,7 +218,12 @@ export default function MenuCRUD() {
           }))
           .filter((g) => g.name !== ""); // drop empty groups
 
-        if (cleaned.length > 0) {
+        // ALWAYS append optionsDef when editing (even empty array) so server knows user wants to update options
+        // For create: appending [] is harmless but could be skipped if you prefer.
+        if (editingItem) {
+          data.append("optionsDef", JSON.stringify(cleaned)); // cleaned may be []
+        } else if (cleaned.length > 0) {
+          // for create: only append when non-empty to avoid clutter
           data.append("optionsDef", JSON.stringify(cleaned));
         }
       }

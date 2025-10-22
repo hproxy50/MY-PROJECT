@@ -42,7 +42,7 @@ export const getMenuItemById = async (req, res) => {
     const { id } = req.params;
 
     const [rows] = await db.query(
-      "SELECT item_id, name, image, category_id, description, price, is_available, branch_id, created_at FROM menu_items WHERE item_id = ?",
+      "SELECT item_id, name, image, category_id, description, price, is_available, branch_id, stock_quantity, created_at FROM menu_items WHERE item_id = ?",
       [id]
     );
 
@@ -222,7 +222,7 @@ export const createMenuItem = async (req, res) => {
   }
 };
 
-// ================= CẬP NHẬT MÓN ĂN =================
+// ================= CẬP NHẬT MÓN ĂN (mới: hỗ trợ options giống create) =================
 export const updateMenuItem = async (req, res) => {
   const { id } = req.params;
   try {
@@ -233,7 +233,17 @@ export const updateMenuItem = async (req, res) => {
       price,
       is_available,
       stock_quantity,
+      optionsDef // <-- optional; nếu gửi thì cập nhật groups/choices tương tự create
     } = req.body;
+
+    // Nếu frontend gửi multipart/form-data, optionsDef có thể là string JSON
+    if (typeof optionsDef === "string" && optionsDef.trim() !== "") {
+      try {
+        optionsDef = JSON.parse(optionsDef);
+      } catch (e) {
+        return res.status(400).json({ message: "optionsDef không phải JSON hợp lệ" });
+      }
+    }
 
     // Ảnh lấy từ file upload
     let image = null;
@@ -242,32 +252,23 @@ export const updateMenuItem = async (req, res) => {
     }
 
     // Lấy dữ liệu cũ
-    const [rows] = await db.query(
-      "SELECT * FROM menu_items WHERE item_id = ?",
-      [id]
-    );
+    const [rows] = await db.query("SELECT * FROM menu_items WHERE item_id = ?", [id]);
     if (rows.length === 0)
       return res.status(404).json({ message: "Không tìm thấy món ăn" });
     const oldData = rows[0];
 
     // Staff chỉ được sửa món ăn thuộc chi nhánh mình
     if (req.user.role === "STAFF" && oldData.branch_id !== req.user.branch_id) {
-      return res
-        .status(403)
-        .json({ message: "Không có quyền sửa món ăn của chi nhánh khác" });
+      return res.status(403).json({ message: "Không có quyền sửa món ăn của chi nhánh khác" });
     }
 
     // Trim chuỗi
     if (typeof name === "string") name = name.trim();
     if (typeof description === "string") description = description.trim();
 
-    // Validate
-    // //Validate: Nếu truyền name rỗng => báo lỗi
-
+    // Validate basic fields
     if (name !== undefined && name === "") {
-      return res
-        .status(400)
-        .json({ message: "Tên món ăn không được để trống" });
+      return res.status(400).json({ message: "Tên món ăn không được để trống" });
     }
 
     if (price !== undefined && isNaN(price)) {
@@ -285,9 +286,7 @@ export const updateMenuItem = async (req, res) => {
       } else {
         stock_quantity = Number(stock_quantity);
         if (isNaN(stock_quantity) || stock_quantity < 0) {
-          return res
-            .status(400)
-            .json({ message: "Số lượng phải là số >= 0 hoặc NULL" });
+          return res.status(400).json({ message: "Số lượng phải là số >= 0 hoặc NULL" });
         }
       }
     } else {
@@ -299,23 +298,16 @@ export const updateMenuItem = async (req, res) => {
       is_available = 0;
     }
 
-    // Kiểm tra category_id hợp lệ
-    const [categoryRows] = await db.query(
-      "SELECT * FROM category WHERE category_id = ?",
-      [category_id]
-    );
-    if (categoryRows.length === 0) {
-      return res.status(400).json({ message: "Category không tồn tại" });
-    }
-
-    const category = categoryRows[0];
-    if (
-      req.user.role === "STAFF" &&
-      category.branch_id !== req.user.branch_id
-    ) {
-      return res
-        .status(403)
-        .json({ message: "Không có quyền sử dụng category này" });
+    // Kiểm tra category_id hợp lệ (nếu truyền mới)
+    if (category_id !== undefined && category_id !== null) {
+      const [categoryRows] = await db.query("SELECT * FROM category WHERE category_id = ?", [category_id]);
+      if (categoryRows.length === 0) {
+        return res.status(400).json({ message: "Category không tồn tại" });
+      }
+      const category = categoryRows[0];
+      if (req.user.role === "STAFF" && category.branch_id !== req.user.branch_id) {
+        return res.status(403).json({ message: "Không có quyền sử dụng category này" });
+      }
     }
 
     // Dùng dữ liệu cũ nếu không truyền mới
@@ -324,49 +316,82 @@ export const updateMenuItem = async (req, res) => {
     category_id = category_id || oldData.category_id;
     description = description || oldData.description;
     price = price || oldData.price;
-    //price = price !== undefined ? price : oldData.price;
-    is_available =
-      is_available !== undefined ? is_available : oldData.is_available;
+    is_available = is_available !== undefined ? is_available : oldData.is_available;
 
-    // Check no change
-    const noChange =
+    // Check no change (lưu ý: chúng ta sẽ coi việc chỉ cập nhật options là "change")
+    const basicNoChange =
       name === oldData.name &&
       image === oldData.image &&
       category_id === oldData.category_id &&
       description === oldData.description &&
-      price === oldData.price &&
+      String(price) === String(oldData.price) &&
       is_available === oldData.is_available &&
       stock_quantity === oldData.stock_quantity;
 
-    if (noChange) {
-      return res
-        .status(400)
-        .json({ message: "Không có thông tin nào được thay đổi" });
+    // If nothing changes and no optionsDef provided => no change
+    if (basicNoChange && (!optionsDef || (Array.isArray(optionsDef) && optionsDef.length === 0))) {
+      return res.status(400).json({ message: "Không có thông tin nào được thay đổi" });
     }
 
-    // Update DB
-    // Insert DB
+    // --- Update menu_items basic fields ---
     await db.query(
       `UPDATE menu_items
-    SET name=?, image=?, category_id=?, description=?, price=?, stock_quantity=?, is_available=? 
-    WHERE item_id=?`,
-      [
-        name,
-        image,
-        category_id,
-        description,
-        price,
-        stock_quantity,
-        is_available,
-        id,
-      ]
+       SET name=?, image=?, category_id=?, description=?, price=?, stock_quantity=?, is_available=?
+       WHERE item_id=?`,
+      [name, image, category_id, description, price, stock_quantity, is_available, id]
     );
+
+    // --- If optionsDef provided, replace existing groups & choices ---
+    // Approach: delete all existing groups for this item (which cascades to choices), then insert new ones.
+    // This approach is simple and safe for now. If you need to preserve choice_id's or do partial updates,
+    // implement diff logic instead.
+    if (optionsDef && Array.isArray(optionsDef)) {
+      try {
+        // Delete old groups (choices will be deleted by FK cascade)
+        await db.query("DELETE FROM item_option_groups WHERE item_id = ?", [id]);
+
+        // Insert new groups & choices (same logic as create)
+        for (let gi = 0; gi < optionsDef.length; gi++) {
+          const group = optionsDef[gi];
+          // Skip invalid/empty groups
+          if (!group || !group.name || !String(group.name).trim()) continue;
+
+          const selType = group.selection_type === "MULTI" ? "MULTI" : "SINGLE";
+          const isReq = group.is_required ? 1 : 0;
+
+          const [gRes] = await db.query(
+            "INSERT INTO item_option_groups (item_id, name, selection_type, is_required, sort_order) VALUES (?, ?, ?, ?, ?)",
+            [id, group.name.trim(), selType, isReq, gi]
+          );
+          const groupId = gRes.insertId;
+
+          if (group.choices && Array.isArray(group.choices)) {
+            for (let ci = 0; ci < group.choices.length; ci++) {
+              const choice = group.choices[ci];
+              if (!choice || !choice.name || !String(choice.name).trim()) continue;
+              const delta = choice.price_delta !== undefined ? Number(choice.price_delta) : 0;
+              await db.query(
+                "INSERT INTO item_option_choices (group_id, name, price_delta, sort_order) VALUES (?, ?, ?, ?)",
+                [groupId, choice.name.trim(), isNaN(delta) ? 0 : delta, ci]
+              );
+            }
+          }
+        }
+      } catch (err) {
+        // If something fails during options update, log error and inform client.
+        // Note: without transaction, menu_items update already committed — consider adding transaction if you want atomicity.
+        console.error("Error updating options for item", id, err);
+        return res.status(500).json({ message: "Lỗi khi cập nhật tùy chọn món ăn", error: err.message || err });
+      }
+    }
 
     return res.json({ message: "Cập nhật món ăn thành công" });
   } catch (error) {
+    console.error("updateMenuItem error:", error);
     return res.status(500).json({ message: "Lỗi server", error });
   }
 };
+
 
 // ================= XÓA MÓN ĂN =================
 export const deleteMenuItem = async (req, res) => {

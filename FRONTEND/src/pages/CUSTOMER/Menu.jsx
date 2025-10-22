@@ -16,6 +16,9 @@ export default function Menu() {
   const token = localStorage.getItem("token");
   const [showMenuInfoModal, setshowMenuInfoModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState({});
 
   //GET CATEGORY
   useEffect(() => {
@@ -39,14 +42,59 @@ export default function Menu() {
         const menuRes = await API.get(`/menu?branch_id=${branchId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setAllMenuItems(menuRes.data); // lưu bản gốc
-        setMenuItems(menuRes.data); // mặc định hiển thị tất cả
+        setAllMenuItems(menuRes.data);
+        setMenuItems(menuRes.data);
       } catch (err) {
         console.error(err);
       }
     };
     fetchMenu();
   }, [branchId, token]);
+
+  //QUANTITY
+  useEffect(() => {
+    if (selectedItem) {
+      let extra = 0;
+      Object.values(selectedOptions).forEach((choices) => {
+        choices.forEach((c) => {
+          extra += Number(c.price_delta) || 0;
+        });
+      });
+
+      const basePrice = Number(selectedItem.price) || 0;
+      const newTotal = (basePrice + extra) * quantity;
+      setTotalPrice(newTotal);
+    }
+  }, [quantity, selectedItem, selectedOptions]);
+
+  const handleDecrease = () => {
+    if (quantity > 1) setQuantity((prev) => prev - 1);
+  };
+
+  const handleIncrease = () => {
+    setQuantity((prev) => prev + 1);
+  };
+
+  const handleOptionChange = (group, choice, checked) => {
+    setSelectedOptions((prev) => {
+      const updated = { ...prev };
+      if (group.selection_type === "SINGLE") {
+        // Chỉ chọn 1 trong nhóm
+        updated[group.group_id] = [choice];
+      } else {
+        // Nhiều lựa chọn
+        const existing = updated[group.group_id] || [];
+        if (checked) {
+          updated[group.group_id] = [...existing, choice];
+        } else {
+          updated[group.group_id] = existing.filter(
+            (c) => c.choice_id !== choice.choice_id
+          );
+        }
+      }
+      return updated;
+    });
+  };
 
   const handleAddToCart = async (itemId) => {
     try {
@@ -161,10 +209,25 @@ export default function Menu() {
                             <div className="product-button">
                               <button
                                 className="product-order"
-                                // onClick={() => handleAddToCart(item.item_id)}
-                                onClick={() => {
-                                  setSelectedItem(item),
+                                onClick={async () => {
+                                  try {
+                                    const res = await API.get(
+                                      `/menu/${item.item_id}`,
+                                      {
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                        },
+                                      }
+                                    );
+                                    setSelectedItem(res.data);
                                     setshowMenuInfoModal(true);
+                                    setQuantity(1);
+                                    setTotalPrice(res.data.price);
+                                    setSelectedOptions({});
+                                  } catch (err) {
+                                    console.error(err);
+                                    alert("Unable to load dish details");
+                                  }
                                 }}
                               >
                                 Order now
@@ -229,7 +292,12 @@ export default function Menu() {
       {showMenuInfoModal && selectedItem && (
         <div className="modal-info" onClick={() => setshowMenuInfoModal(false)}>
           <div
-            className="modal-info-content"
+            className={`modal-info-content ${
+              !selectedItem.optionGroups ||
+              selectedItem.optionGroups.length === 0
+                ? "no-options"
+                : ""
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-info-content-header">
@@ -243,223 +311,107 @@ export default function Menu() {
                 X
               </div>
             </div>
-            <div className="modal-info-content-body">
+            <div
+              className={`modal-info-content-body ${
+                !selectedItem.optionGroups ||
+                selectedItem.optionGroups.length === 0
+                  ? "no-options"
+                  : ""
+              }`}
+            >
               <div className="modal-info-content-body-left">
-                <h3>#Product name (L)</h3>
-                <p>Product Description</p>
-                <img src={product} alt="product-image" />
-                <p className="modal-price">Price: 240.000 d</p>
+                <h3>{selectedItem.name}</h3>
+                <p>{selectedItem.description}</p>
+                {selectedItem.image ? (
+                  <img
+                    src={`http://localhost:3000${selectedItem.image}`}
+                    alt={selectedItem.name}
+                  />
+                ) : (
+                  <img src={product} alt="default" />
+                )}
+                <p className="modal-price">
+                  {isNaN(totalPrice) ? "0" : Number(totalPrice).toLocaleString("vi-VN")} đ
+                </p>
                 <div className="modal-info-content-body-left-quantity">
                   <button
-                    className="modal-info-content-body-left-quantity-button"
-                    // onClick={() =>
-                    //   handleUpdateQty(item.order_item_id, item.quantity - 1)
-                    // }
+                    onClick={handleDecrease}
+                    disabled={quantity === 1}
+                    className={quantity === 1 ? "btn-disabled" : ""}
                   >
-                    −
+                    –
                   </button>
-                  <span className="modal-info-content-body-left-quantity-number">
-                    1{/* {item.quantity} */}
-                  </span>
-                  <button
-                    className="modal-info-content-body-left-quantity-btn"
-                    // onClick={() =>
-                    //   handleUpdateQty(item.order_item_id, item.quantity + 1)
-                    // }
-                  >
-                    +
-                  </button>
+                  <span>{quantity}</span>
+                  <button onClick={handleIncrease}>+</button>
                 </div>
               </div>
-              <div className="modal-info-content-body-right">
-                <div className="modal-info-content-body-right-topping">
-                  <div className="modal-info-content-body-right-topping-title">
-                    Chọn kích thước
-                  </div>
-                  <div className="modal-info-content-body-right-topping-notification">
-                    ( Thường R: 6 miếng 22cm | Lớn L: 8 miếng 30cm )
-                  </div>
-                  <div className="modal-info-content-body-right-topping-choosing">
-                    <div className="size-option">
-                      <input
-                        type="radio"
-                        id="size-m"
-                        name="pizza-size"
-                        value="R"
-                      />
-                      <div className="modal-info-content-body-right-topping-choosing-info">
-                        <label>R</label>
-                        <label>240.000d</label>
+              {selectedItem.optionGroups?.length > 0 ? (
+                <div className="modal-info-content-body-right">
+                  {selectedItem.optionGroups.map((group) => (
+                    <div
+                      className="modal-info-content-body-right-topping"
+                      key={group.group_id}
+                    >
+                      <div className="modal-info-content-body-right-topping-title">
+                        {group.group_name}
+                      </div>
+
+                      <div className="modal-info-content-body-right-topping-choosing">
+                        {group.choices.map((choice) => (
+                          <div
+                            key={choice.choice_id}
+                            className={
+                              group.selection_type === "SINGLE"
+                                ? "size-option"
+                                : "modal-info-content-body-right-topping-choosing-checkbox"
+                            }
+                          >
+                            <input
+                              type={
+                                group.selection_type === "SINGLE"
+                                  ? "radio"
+                                  : "checkbox"
+                              }
+                              name={`group-${group.group_id}`}
+                              value={choice.choice_id}
+                              onChange={(e) =>
+                                handleOptionChange(
+                                  group,
+                                  choice,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            <div className="modal-info-content-body-right-topping-choosing-info">
+                              <label>{choice.choice_name}</label>
+                              {choice.price_delta !== 0 && (
+                                <label className="checkbox-price">
+                                  +
+                                  {Number(choice.price_delta).toLocaleString(
+                                    "vi-VN"
+                                  )}
+                                  đ
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div className="size-option">
-                      <input
-                        type="radio"
-                        id="size-l"
-                        name="pizza-size"
-                        value="L"
-                      />
-                      <div className="modal-info-content-body-right-topping-choosing-info">
-                        <label>L</label>
-                        <label>300.000d</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-info-content-body-right-topping">
-                  <div className="modal-info-content-body-right-topping-title">
-                    Chọn đế
-                  </div>
-                  <div className="modal-info-content-body-right-topping-notification">
-                    {/* ( Thường R: 6 miếng 22cm | Lớn L: 8 miếng 30cm ) */}
-                  </div>
-                  <div className="modal-info-content-body-right-topping-choosing">
-                    <div className="size-option">
-                      <input
-                        type="radio"
-                        id="size-m"
-                        name="pizza-size"
-                        value="R"
-                      />
-                      <div className="modal-info-content-body-right-topping-choosing-info">
-                        <label>Mỏng</label>
-                        {/* <label>240.000d</label> */}
-                      </div>
-                    </div>
-                    <div className="size-option">
-                      <input
-                        type="radio"
-                        id="size-l"
-                        name="pizza-size"
-                        value="L"
-                      />
-                      <div className="modal-info-content-body-right-topping-choosing-info">
-                        <label>Dày</label>
-                        {/* <label>300.000d</label> */}
-                      </div>
-                    </div>
+                  ))}
+                  <div className="modal-info-content-body-right-buy">
+                    <button className="modal-info-content-body-right-buy-button">
+                      OK
+                    </button>
                   </div>
                 </div>
-                <div className="modal-info-content-body-right-topping">
-                  <div className="modal-info-content-body-right-topping-title">
-                    Thêm
-                  </div>
-                  <div className="modal-info-content-body-right-topping-notification">
-                  </div>
-                  <div className="modal-info-content-body-right-topping-choosing">
-                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                    <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                     <div className="modal-info-content-body-right-topping-choosing-checkbox">
-                      <input type="checkbox" name="topping" value="phomat" />
-                      <div className="modal-info-content-body-right-topping-choosing-checkbox-checkboxinfo">
-                        <label>Cheese</label>
-                        <label className="checkbox-price">30.000d</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-info-content-body-right-buy">
-                  <button className="modal-info-content-body-right-buy-button">
+              ) : (
+                <div className="modal-info-content-body-left-buy">
+                  <button className="modal-info-content-body-left-buy-button">
                     OK
                   </button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
