@@ -15,6 +15,7 @@ const Header = ({ orderId, cartCount }) => {
             src={LogoImage}
             alt="Logo"
             className="header-logo"
+            onClick={navigate }
           />
           <p>Pizza Restaurant</p>
         </div>

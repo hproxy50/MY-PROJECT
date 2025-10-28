@@ -461,12 +461,20 @@ export default function Checkout() {
               <div className="checkout-page-card-bottom-right-middle1">
                 {checkoutData.items.map((i) => (
                   <div className="product" key={i.order_item_id}>
-                    <img src={product} alt="product" />
+                    {i.image ? (
+                      <img
+                        src={`http://localhost:3000${i.image}`}
+                        alt={i.name}
+                      />
+                    ) : (
+                      "NO IMAGE"
+                    )}
                     <div className="product-info">
                       <p className="product-info-name">{i.name}</p>
                       <p className="product-info-quantity">
                         Quantity: {i.quantity}
                       </p>
+                      <p>{i.option_summary}</p>
                     </div>
                     <p className="product-price">
                       {Number(i.line_total).toLocaleString("vi-VN")} đ
@@ -577,6 +585,7 @@ export default function Checkout() {
                         await handleConfirm();
                       } else if (form.payment_method === "QR") {
                         try {
+                          await handleConfirmQR();
                           const res = await API.post(
                             `/orders/${orderId}/payment-payos`,
                             {},
@@ -584,11 +593,10 @@ export default function Checkout() {
                               headers: { Authorization: `Bearer ${token}` },
                             }
                           );
-                          await handleConfirmQR();
                           //PayOS
                           window.location.href = res.data.paymentUrl;
                         } catch (err) {
-                          alert("Không tạo được link PayOS");
+                          alert("Can't create link PayOS");
                         }
                       }
                     }}

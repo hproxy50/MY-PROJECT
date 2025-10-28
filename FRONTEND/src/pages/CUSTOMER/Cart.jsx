@@ -7,6 +7,7 @@ import Header from "../../components/Header";
 import "../../css/cart.scss";
 import Empty from "../../assets/image/empty.jpg";
 
+
 export default function Cart() {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
@@ -111,6 +112,31 @@ export default function Cart() {
                         <div className="product-detail-namedesc">
                           <h5>{item.name}</h5>
                           <p>{item.description}</p>
+                          {item.option_summary ? (
+                            <p className="item-options">
+                              Options: {item.option_summary}
+                            </p>
+                          ) : item.options && item.options.length > 0 ? (
+                            <div className="item-options">
+                              {item.options.map((o, idx) => (
+                                <p
+                                  key={idx}
+                                  style={{
+                                    margin: 0,
+                                    fontSize: "0.9rem",
+                                    color: "#555",
+                                  }}
+                                >
+                                  - {o.group_name}: {o.choice_name}
+                                  {o.price_delta
+                                    ? ` (+${Number(
+                                        o.price_delta
+                                      ).toLocaleString("vi-VN")}đ)`
+                                    : ""}
+                                </p>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                       <p>{Number(item.unit_price).toLocaleString("vi-VN")} đ</p>

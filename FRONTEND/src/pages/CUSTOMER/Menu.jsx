@@ -96,14 +96,37 @@ export default function Menu() {
     });
   };
 
-  const handleAddToCart = async (itemId) => {
+  const buildSelectedOptionsPayload = () => {
+    // selectedOptions state: { [group_id]: [choiceObj, ...], ... }
+    // Convert to array of { group_id, choice_id }
+    const arr = [];
+    Object.entries(selectedOptions).forEach(([groupId, choices]) => {
+      (choices || []).forEach((c) => {
+        if (c && c.choice_id) {
+          arr.push({
+            group_id: Number(groupId),
+            choice_id: Number(c.choice_id),
+          });
+        }
+      });
+    });
+    return arr;
+  };
+
+  const handleAddToCart = async (itemId, qty = 1) => {
     try {
-      await API.post(
-        "/cart/items",
-        { order_id: orderId, item_id: itemId, quantity: 1 },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setCartCount((prev) => prev + 1);
+      const payload = {
+        order_id: orderId,
+        item_id: itemId,
+        quantity: Number(qty),
+        selectedOptions: buildSelectedOptionsPayload(), // <-- new
+      };
+
+      await API.post("/cart/items", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCartCount((prev) => prev + Number(qty));
+      setshowMenuInfoModal(false);
     } catch (err) {
       alert(err.response?.data?.message || "Cannot add to cart");
       console.error(err);
@@ -331,7 +354,10 @@ export default function Menu() {
                   <img src={product} alt="default" />
                 )}
                 <p className="modal-price">
-                  {isNaN(totalPrice) ? "0" : Number(totalPrice).toLocaleString("vi-VN")} đ
+                  {isNaN(totalPrice)
+                    ? "0"
+                    : Number(totalPrice).toLocaleString("vi-VN")}{" "}
+                  đ
                 </p>
                 <div className="modal-info-content-body-left-quantity">
                   <button
@@ -400,15 +426,15 @@ export default function Menu() {
                     </div>
                   ))}
                   <div className="modal-info-content-body-right-buy">
-                    <button className="modal-info-content-body-right-buy-button">
-                      OK
+                    <button className="modal-info-content-body-right-buy-button" onClick={() => handleAddToCart(selectedItem.item_id, quantity)}>
+                      Add to cart
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="modal-info-content-body-left-buy">
-                  <button className="modal-info-content-body-left-buy-button">
-                    OK
+                  <button className="modal-info-content-body-left-buy-button" onClick={() => handleAddToCart(selectedItem.item_id, quantity)}>
+                    Add to cart
                   </button>
                 </div>
               )}

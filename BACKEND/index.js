@@ -52,7 +52,7 @@ app.use("/promotion", promoRoutes);
 
 app.use("/staff", staffOrderRoutes);
 
-// error handler (basic)
+
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ message: "Internal server error" });

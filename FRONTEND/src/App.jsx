@@ -8,7 +8,6 @@ import Unauthorized from "./pages/OTHER/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/ADMIN/AdminDashboard";
 import StaffIncomingOrders from "./pages/STAFF/StaffIncomingOrders";
-import StaffPreparingOrders from "./pages/STAFF/StaffPreparingOrders";
 import Menu from "./pages/CUSTOMER/Menu";
 import CategoryCRUD from "./pages/STAFF/CategoryCRUD";
 import Cart from "./pages/CUSTOMER/Cart";
@@ -56,15 +55,6 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["STAFF"]}>
             <StaffIncomingOrders />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/staff/orders/preparing"
-        element={
-          <ProtectedRoute allowedRoles={["STAFF"]}>
-            <StaffPreparingOrders />
           </ProtectedRoute>
         }
       />
