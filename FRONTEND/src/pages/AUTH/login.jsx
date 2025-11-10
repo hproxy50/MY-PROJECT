@@ -21,7 +21,7 @@ export default function Login() {
       // Điều hướng theo role
       const role = res.data.user.role;
       if (role === "STAFF") {
-        navigate("/staff/menu-crud");
+        navigate("/staff/orders");
       } else if (role === "ADMIN") {
         navigate("/admin/dashboard");
       } else if (role === "CUSTOMER") {

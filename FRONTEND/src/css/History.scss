@@ -1,0 +1,115 @@
+.HistoryBody {
+    .History-top {
+        margin-top: 50px;
+        &-sort{
+            ul{
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                font-size: large;
+                font-weight: bolder;
+                font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+                margin-left: 50px;
+                margin-right: 50px;
+                padding: 0;
+                padding-top: 15px;
+                list-style: none;
+                li{
+                    border-bottom: 3px solid red;
+                    margin-left: 15px;
+                    margin-right: 15px;
+                    div{
+                        width: 200px;
+                        height: 40px;
+                        text-align: center;
+                    }
+                }
+                display: flex;
+                justify-content: center;
+                gap: 5px;
+            }
+        }
+    }
+    .History-top2{
+        background-color: aquamarine;
+        margin-left: 50px;
+        margin-right: 50px;
+        input {
+            width: 100%;       
+            height: 40px;       
+            background-color: #e0e0e0; 
+            border: none;      
+            outline: none;      
+            padding-left: 10px; 
+            font-size: 16px;
+            border-radius: 6px;
+        }
+    }
+
+    .History-mid {
+        margin-left: 50px;
+        margin-right: 50px;
+        margin-bottom: 50px;
+
+        .History-product {
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            &-status {
+                margin-right: 20px;
+                text-align: right;
+            }
+
+            &-productInfo {
+                border-bottom: 1px solid grey; 
+                margin: 20px;
+                display: flex;
+                width: 95%;
+                padding-bottom: 20px;
+                img {
+                    width: 120px;
+                    height: 120px;
+                }
+
+                &-name {
+                    &-option {
+                        margin-left: 20px;
+                    }
+                    &-productName{
+                        margin-left: 20px;
+                    }
+                    &-price{
+                        padding-left: 25px;
+                        display: flex;
+                        justify-content: space-between;
+                        &-right{
+                           margin-left: 1150px;
+                        }
+                    }
+                }
+            }
+            &-totalPrice{
+                margin-top: 50px;
+                display: flex;
+                justify-content: right;
+                margin-right: 10px;
+                gap: 5px;
+            }
+            &-button{
+                display: flex;
+                justify-content: right;
+                
+                &-again{
+                    background-color: red;
+                }
+                &-rating{
+                    background: grey;
+                }
+                button{
+                    width: 15%;
+                    margin: 20px;
+                    padding: 15px;
+                    border: none;
+                    color: white;
+                }
+            }
+        }
+    }
+}

@@ -7,28 +7,27 @@ import MenuCRUD from "./pages/STAFF/MenuCRUD";
 import Unauthorized from "./pages/OTHER/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/ADMIN/AdminDashboard";
-import StaffIncomingOrders from "./pages/STAFF/StaffIncomingOrders";
+import StaffDashboard from "./pages/STAFF/StaffDashboard";
 import Menu from "./pages/CUSTOMER/Menu";
 import CategoryCRUD from "./pages/STAFF/CategoryCRUD";
 import Cart from "./pages/CUSTOMER/Cart";
-import Checkout from "./pages/CUSTOMER/Checkout"
-
+import Checkout from "./pages/CUSTOMER/Checkout";
+import History from "./pages/CUSTOMER/History";
 
 function App() {
   return (
     <Routes>
-
       {/* ALL USERS */}
       <Route path="/" element={<Navigate to="/login" />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       {/* <Route path="/checkout" element={<Checkout />} /> */}
-
+      <Route path="/history" element={<History />} />
       {/* CUSTOMER */}
       <Route path="/branches" element={<BranchSelectPage />} />
-      <Route path="/menu/:branchId/:orderId" element={<Menu/>} />
-      <Route path="/cart/:orderId" element={<Cart/>}  />
+      <Route path="/menu/:branchId/:orderId" element={<Menu />} />
+      <Route path="/cart/:orderId" element={<Cart />} />
       <Route path="/checkout/:orderId" element={<Checkout />} />
 
       {/* STAFF */}
@@ -41,7 +40,7 @@ function App() {
         }
       />
 
-       <Route
+      <Route
         path="/staff/category-crud"
         element={
           <ProtectedRoute allowedRoles={["STAFF"]}>
@@ -51,10 +50,10 @@ function App() {
       />
 
       <Route
-        path="/staff/orders/incoming"
+        path="/staff/*"
         element={
           <ProtectedRoute allowedRoles={["STAFF"]}>
-            <StaffIncomingOrders />
+            <StaffDashboard />
           </ProtectedRoute>
         }
       />
