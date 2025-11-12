@@ -14,6 +14,8 @@ export default function History() {
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const navigate = useNavigate();
 
@@ -42,6 +44,16 @@ export default function History() {
     };
     fetchOrders();
   }, []);
+
+  const openDetailModal = (order) => {
+    setSelectedOrder(order);
+    setShowDetailModal(true);
+  };
+
+  const closeDetailModal = () => {
+    setSelectedOrder(null);
+    setShowDetailModal(false);
+  };
 
   const getRatingText = () => {
     switch (rating) {
@@ -117,18 +129,41 @@ export default function History() {
   };
 
   const filteredOrders = orders
-    .filter((o) =>
-      filterStatus === "ALL"
-        ? true
-        : (o.status || "").toUpperCase() === filterStatus
-    )
+    .filter((o) => {
+      const status = (o.status || "").toUpperCase();
+      if (filterStatus === "IN_PROGRESS") {
+        return ["PENDING", "PREPARING", "DELIVERY"].includes(status);
+      }
+      if (filterStatus === "ALL") {
+        return ["COMPLETED", "CANCELED"].includes(status);
+      }
+      return status === filterStatus;
+    })
     .filter((o) =>
       searchText.trim() === ""
         ? true
         : o.items.some((item) =>
             item.name.toLowerCase().includes(searchText.toLowerCase())
           )
-    );
+    )
+    .sort((a, b) => {
+      if (filterStatus === "IN_PROGRESS") {
+        const orderPriority = {
+          DELIVERY: 1,
+          PREPARING: 2,
+          PENDING: 3,
+        };
+        const statusA = orderPriority[(a.status || "").toUpperCase()] || 99;
+        const statusB = orderPriority[(b.status || "").toUpperCase()] || 99;
+        return statusA - statusB;
+      }
+
+      if (filterStatus === "ALL") {
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+
+      return 0;
+    });
 
   return (
     <>
@@ -138,34 +173,22 @@ export default function History() {
           <div className="History-top-sort">
             <ul>
               <li
+                onClick={() => setFilterStatus("IN_PROGRESS")}
+                className={filterStatus === "IN_PROGRESS" ? "active" : ""}
+              >
+                <div className="History-top-sort-inprogress">In Progress</div>
+              </li>
+              <li
                 onClick={() => setFilterStatus("ALL")}
                 className={filterStatus === "ALL" ? "active" : ""}
               >
-                <div className="History-top-sort-all">All</div>
-              </li>
-              <li
-                onClick={() => setFilterStatus("PENDING")}
-                className={filterStatus === "PENDING" ? "active" : ""}
-              >
-                <div className="History-top-sort-pending">Pending</div>
-              </li>
-              <li
-                onClick={() => setFilterStatus("PREPARING")}
-                className={filterStatus === "PREPARING" ? "active" : ""}
-              >
-                <div className="History-top-sort-preparing">Preparing</div>
-              </li>
-              <li
-                onClick={() => setFilterStatus("DELIVERY")}
-                className={filterStatus === "DELIVERY" ? "active" : ""}
-              >
-                <div className="History-top-sort-delivery">Delivery</div>
+                <div className="History-top-sort-delivery">History</div>
               </li>
               <li
                 onClick={() => setFilterStatus("COMPLETED")}
                 className={filterStatus === "COMPLETED" ? "active" : ""}
               >
-                <div className="History-top-sort-complete">COMPLETED</div>
+                <div className="History-top-sort-complete">Rating</div>
               </li>
               <li
                 onClick={() => setFilterStatus("CANCELED")}
@@ -257,7 +280,10 @@ export default function History() {
                       {order.isRated ? "Edit Rating" : "Rating product"}
                     </button>
                   )}
-                  <button className="History-product-button-detail">
+                  <button
+                    className="History-product-button-detail"
+                    onClick={() => openDetailModal(order)}
+                  >
                     More Detail
                   </button>
                 </div>
@@ -318,6 +344,99 @@ export default function History() {
                 >
                   {isEditing ? "Update Review" : "Submit Review"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showDetailModal && selectedOrder && (
+          <div className="modalDetail">
+            <div className="modalDetail-content">
+              <div className="modalDetail-header">
+                <h2>Order Details</h2>
+                <button
+                  className="modalDetail-close"
+                  onClick={closeDetailModal}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="modalDetail-body">
+                <div className="modalDetail-info">
+                  {/* <p>
+                    <strong>Order ID:</strong> {selectedOrder.order_id}
+                  </p> */}
+                  <p>
+                    <strong>Status:</strong> {selectedOrder.status}
+                  </p>
+                  <p>
+                    <strong>Created at:</strong>{" "}
+                    {new Date(selectedOrder.created_at).toLocaleString()}
+                  </p>
+                  <p>
+                    <strong>Order type:</strong> {selectedOrder.order_type}
+                  </p>
+                  <p>
+                    <strong>Payment method:</strong>{" "}
+                    {selectedOrder.payment_method}
+                  </p>
+                  <p>
+                    <strong>Customer name:</strong>{" "}
+                    {selectedOrder.customer_name}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {selectedOrder.customer_phone}
+                  </p>
+                  <p>
+                    <strong>Address:</strong>{" "}
+                    {selectedOrder.delivery_address || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Scheduled time:</strong>{" "}
+                    {selectedOrder.scheduled_time || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Branch:</strong> {selectedOrder.branch_name}
+                  </p>
+                  <hr />
+                  <p>
+                    <strong>Total price:</strong>{" "}
+                    {Number(selectedOrder.total_price).toLocaleString("vi-VN")}đ
+                  </p>
+                  <p>
+                    <strong>Discount:</strong>{" "}
+                    {Number(selectedOrder.discount_amount).toLocaleString(
+                      "vi-VN"
+                    )}
+                    đ
+                  </p>
+                  <p>
+                    <strong>Final price:</strong>{" "}
+                    {Number(selectedOrder.final_price).toLocaleString("vi-VN")}đ
+                  </p>
+                </div>
+
+                <div className="modalDetail-items">
+                  <h3>Ordered Items</h3>
+                  {selectedOrder.items.map((item) => (
+                    <div key={item.order_item_id} className="modalDetail-item">
+                      <img
+                        src={`http://localhost:3000${item.image}`}
+                        alt={item.name}
+                      />
+                      <div className="modalDetail-item-info">
+                        <p>
+                          <strong>{item.name}</strong>
+                        </p>
+                        <p>{item.option_summary || "No option"}</p>
+                        <p>x{item.quantity}</p>
+                        <p>
+                          {Number(item.line_total).toLocaleString("vi-VN")}đ
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

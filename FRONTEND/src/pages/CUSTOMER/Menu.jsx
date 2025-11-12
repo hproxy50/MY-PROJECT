@@ -20,7 +20,6 @@ export default function Menu() {
   const [totalPrice, setTotalPrice] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState({});
 
-  //GET CATEGORY
   useEffect(() => {
     const fetchCategory = async () => {
       try {
@@ -164,7 +163,26 @@ export default function Menu() {
 
   return (
     <>
-      <Header orderId={orderId} cartCount={cartCount} />
+      <Header
+        orderId={orderId}
+        cartCount={cartCount}
+        allMenuItems={allMenuItems}
+        onSelectItem={async (itemId) => {
+          try {
+            const res = await API.get(`/menu/${itemId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setSelectedItem(res.data);
+            setshowMenuInfoModal(true);
+            setQuantity(1);
+            setTotalPrice(res.data.price);
+            setSelectedOptions({});
+          } catch (err) {
+            console.error(err);
+            alert("Unable to load dish details");
+          }
+        }}
+      />
       <div className="body">
         <div className="body-product">
           <div className="sidebar-left">
@@ -426,14 +444,24 @@ export default function Menu() {
                     </div>
                   ))}
                   <div className="modal-info-content-body-right-buy">
-                    <button className="modal-info-content-body-right-buy-button" onClick={() => handleAddToCart(selectedItem.item_id, quantity)}>
+                    <button
+                      className="modal-info-content-body-right-buy-button"
+                      onClick={() =>
+                        handleAddToCart(selectedItem.item_id, quantity)
+                      }
+                    >
                       Add to cart
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="modal-info-content-body-left-buy">
-                  <button className="modal-info-content-body-left-buy-button" onClick={() => handleAddToCart(selectedItem.item_id, quantity)}>
+                  <button
+                    className="modal-info-content-body-left-buy-button"
+                    onClick={() =>
+                      handleAddToCart(selectedItem.item_id, quantity)
+                    }
+                  >
                     Add to cart
                   </button>
                 </div>

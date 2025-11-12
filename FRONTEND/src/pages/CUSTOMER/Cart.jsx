@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import API from "../../api/api";
-import Header from "../../components/Header";
+import HeaderStatus from "../../components/headerStatus";
 import "../../css/cart.scss";
 import Empty from "../../assets/image/empty.jpg";
 
@@ -67,7 +67,7 @@ export default function Cart() {
 
   return (
     <>
-      <Header orderId={orderId} />
+      <HeaderStatus orderId={orderId} />
       <div className="cart-page">
         <div className="body">
           <div className="body-top">
