@@ -19,17 +19,7 @@ const Header = ({ orderId, cartCount }) => {
           />
           <p>Pizza Restaurant</p>
         </div>
-        <div className="header-Top-Middle">
-          <input type="text" placeholder="Search" className="searchBar" />
-          <button className="searchButton">
-            <Search
-              className="searchIcon"
-              alt="search"
-              color="black"
-              size={20}
-            />
-          </button>
-        </div>
+
         <div className="header-Top-Right">
           <p>Service</p>
                   <div className="text-end">
@@ -38,7 +28,7 @@ const Header = ({ orderId, cartCount }) => {
         <button
             className="btn btn-outline-primary"
             onClick={() => navigate(`/cart/${orderId}`)}
-            disabled={!orderId} // chưa có orderId thì disable
+            disabled={!orderId}
           >
              {cartCount > 0 && (
               <span className="position-absolute top-50 start-90 translate-middle badge rounded-pill bg-danger">

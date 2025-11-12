@@ -23,7 +23,7 @@ export default function Checkout() {
   const [form, setForm] = useState({
     customer_name: "",
     customer_phone: "",
-    order_type: "DINE_IN",
+    order_type: "TAKEAWAY",
     scheduled_time: "",
     delivery_address: "",
     payment_method: "CASH",
@@ -97,18 +97,42 @@ export default function Checkout() {
   };
 
   const handleConfirmQR = async () => {
-    if (
-      deliveryMethod === "delivery" &&
-      (!form.ward.trim() || !form.street.trim())
-    ) {
-      alert(
-        "Please fill in full ward/commune information and house number/street name."
-      );
-      return;
+    // --- Validate chung cho PICKUP ---
+    if (deliveryMethod === "pickup") {
+      if (!form.scheduled_time.trim()) {
+        alert("Please select the time you will come");
+        return false;
+      }
     }
+
+    // --- Validate cho DELIVERY ---
+    if (deliveryMethod === "delivery") {
+      if (!form.customer_phone.trim()) {
+        alert("Please enter recipient phone");
+        return false;
+      }
+      if (!form.customer_name.trim()) {
+        alert("Please enter recipient name");
+        return false;
+      }
+      if (!form.ward.trim()) {
+        alert("Please enter ward/commune");
+        return false;
+      }
+      if (!form.street.trim()) {
+        alert("Please enter house number/street name");
+        return false;
+      }
+      if (!form.scheduled_time.trim()) {
+        alert("Please select desired delivery time");
+        return false;
+      }
+    }
+
     try {
       const delivery_address =
         `${form.street}, ${form.ward}, ${form.district}`.trim();
+
       const payload = {
         ...form,
         delivery_address,
@@ -117,11 +141,15 @@ export default function Checkout() {
             ? form.messageStore
             : form.messageDelivery,
       };
+
       await API.post(`/orders/${orderId}/confirmQR`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      return true;
     } catch (err) {
       alert(err.response?.data?.message || "err order qr");
+      return false;
     }
   };
 
@@ -326,10 +354,10 @@ export default function Checkout() {
                         <input
                           type="text"
                           className="checkout-page-card-bottom-left-down-info-delivery-district"
-                          name="customer_district"
+                          name="district"
                           value={form.district}
-                          // onChange={handleChange}
                           readOnly
+                          // onChange={handleChange}
                         />
                         {/* input[readOnly] {
                         background-color: #f5f5f5;
@@ -427,8 +455,7 @@ export default function Checkout() {
                             );
                             const h = String(hour).padStart(2, "0");
                             const m = String(minute).padStart(2, "0");
-                            const formatted = `${year}-${month}-${day} ${h}:${m}:00`;
-
+                            const formatted = `${year}-${month}-${day}T${h}:${m}:00`;
                             handleChange({
                               target: {
                                 name: "scheduled_time",
@@ -585,7 +612,8 @@ export default function Checkout() {
                         await handleConfirm();
                       } else if (form.payment_method === "QR") {
                         try {
-                          await handleConfirmQR();
+                          const ok = await handleConfirmQR();
+                          if (!ok) return;
                           const res = await API.post(
                             `/orders/${orderId}/payment-payos`,
                             {},

@@ -16,13 +16,15 @@ import staffOrderRoutes from "./routes/staffOrdersRoutes.js";
 import chefOrderRoutes from "./routes/chefOrderRoutes.js";
 import shipperOrderRoutes from "./routes/shipperOrderRoutes.js";
 import { upload } from "./middlewares/uploadMiddlewares.js";
+import cusHistoryRoutes from "./routes/cusHistoryRoutes.js"
+import ratingRoutes from "./routes/ratingRoutes.js"
 
 const app = express();
 
 import cors from "cors";
 
 app.use(cors({
-  origin: "http://localhost:5173", // FE React
+  origin: "http://localhost:5173",
   credentials: true
 }));
 
@@ -58,6 +60,9 @@ app.use("/chef", chefOrderRoutes);
 
 app.use("/shipper", shipperOrderRoutes);
 
+app.use("/history", cusHistoryRoutes);
+
+app.use("/rating", ratingRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

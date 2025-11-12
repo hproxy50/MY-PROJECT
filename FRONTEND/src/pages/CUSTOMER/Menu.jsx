@@ -137,7 +137,7 @@ export default function Menu() {
     const observerOptions = {
       root: null,
       rootMargin: "0px",
-      threshold: 0.5, // phần tử hiển thị >= 40% mới tính là "đang xem"
+      threshold: 0.3, // phần tử hiển thị >= 40% mới tính là "đang xem"
     };
 
     const observer = new IntersectionObserver((entries) => {
