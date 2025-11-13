@@ -6,7 +6,7 @@ import { SquarePen } from "lucide-react";
 import { useParams } from "react-router-dom";
 import API from "../../api/api";
 import product from "../../assets/image/product.jpg";
-import Header from "../../components/Header";
+import HeaderStatus from "../../components/headerStatus";
 import { useNavigate } from "react-router-dom";
 
 export default function Checkout() {
@@ -90,7 +90,12 @@ export default function Checkout() {
       await API.post(`/orders/${orderId}/confirm`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      window.location.href = "/"; // hoặc chuyển sang trang "đơn hàng của tôi"
+      await API.post(
+        "/cart",
+        { branch_id: checkoutData.branch.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      navigate("/history");
     } catch (err) {
       alert(err.response?.data?.message || "err order");
     }
@@ -145,7 +150,6 @@ export default function Checkout() {
       await API.post(`/orders/${orderId}/confirmQR`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       return true;
     } catch (err) {
       alert(err.response?.data?.message || "err order qr");
@@ -199,7 +203,7 @@ export default function Checkout() {
 
   return (
     <>
-      <Header />
+      <HeaderStatus branchId={checkoutData.branch.id} orderId={orderId} />
       <div className="checkout-page">
         <div className="checkout-page-card">
           <div className="checkout-page-card-top">

@@ -13,6 +13,7 @@ import CategoryCRUD from "./pages/STAFF/CategoryCRUD";
 import Cart from "./pages/CUSTOMER/Cart";
 import Checkout from "./pages/CUSTOMER/Checkout";
 import History from "./pages/CUSTOMER/History";
+import PaymentResult from "./pages/CUSTOMER/PaymentResult"
 
 function App() {
   return (
@@ -24,6 +25,8 @@ function App() {
       <Route path="/unauthorized" element={<Unauthorized />} />
       {/* <Route path="/checkout" element={<Checkout />} /> */}
       <Route path="/history" element={<History />} />
+      <Route path="/payment-success" element={<PaymentResult />} />
+      <Route path="/payment-cancel" element={<PaymentResult />} />
       {/* CUSTOMER */}
       <Route path="/branches" element={<BranchSelectPage />} />
       <Route path="/menu/:branchId/:orderId" element={<Menu />} />

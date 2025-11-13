@@ -164,6 +164,7 @@ export default function Menu() {
   return (
     <>
       <Header
+        branchId={branchId}
         orderId={orderId}
         cartCount={cartCount}
         allMenuItems={allMenuItems}

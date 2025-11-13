@@ -1,12 +1,19 @@
 // routes/orders.js
+console.log("--- ĐANG TẢI FILE: routes/orderRoutes.js (BẢN CHÍNH XÁC) ---");
 import express from "express";
 import { verifyToken} from "../middlewares/authMiddlewares.js";
-import { getCheckoutInfo, confirmOrder, applyPromotion, createPayOSPayment, payOSWebhook} from "../controllers/ordersController.js";
+import { getCheckoutInfo, confirmOrder, applyPromotion, createPayOSPayment, payOSWebhook, confirmOrderQR} from "../controllers/ordersController.js";
 const router = express.Router();
+
+// THÊM MIDDLEWARE LOG NÀY VÀO
+router.use((req, res, next) => {
+  console.log(`--- REQUEST ĐÃ ĐẾN orderRoutes.js: ${req.method} ${req.path} ---`);
+  next();
+});
 
 router.get("/:id/checkout",verifyToken, getCheckoutInfo);
 router.post("/:id/confirm",verifyToken, confirmOrder);
-router.post("/:id/confirmQR",verifyToken, confirmOrder);
+router.post("/:id/confirmQR",verifyToken, confirmOrderQR);
 router.post("/:id/apply-promo", verifyToken, applyPromotion);
 
 // Tạo link thanh toán PayOS

@@ -167,7 +167,10 @@ export default function History() {
 
   return (
     <>
-      <Header />
+      <Header
+        orderId={currentOrderId}
+        branchId={selectedOrder?.branch_id}
+      />
       <div className="HistoryBody">
         <div className="History-top">
           <div className="History-top-sort">

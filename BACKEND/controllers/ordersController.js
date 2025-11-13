@@ -1,5 +1,7 @@
+console.log("--- ordersController.js ĐÃ ĐƯỢC TẢI (PHIÊN BẢN MỚI) ---");
 import db from "../config/db.js";
 import payos from "../config/payos.js";
+
 
 // ================= LẤY DỮ LIỆU TRANG CHECKOUT =================
 export const getCheckoutInfo = async (req, res) => {
@@ -76,10 +78,7 @@ export const confirmOrder = async (req, res) => {
     }
 
     // Validate dữ liệu theo order_type
-    if (
-      (order_type === "TAKEAWAY") &&
-      !scheduled_time
-    ) {
+    if (order_type === "TAKEAWAY" && !scheduled_time) {
       return res
         .status(400)
         .json({ message: "Vui lòng chọn giờ cho DINE_IN hoặc TAKEAWAY" });
@@ -144,7 +143,7 @@ export const confirmOrderQR = async (req, res) => {
 
     // Validate dữ liệu theo order_type
     if (
-      (order_type === "TAKEAWAY") &&
+      order_type === "TAKEAWAY" &&
       (!scheduled_time || scheduled_time.trim() === "")
     ) {
       return res
@@ -157,12 +156,13 @@ export const confirmOrderQR = async (req, res) => {
     }
 
     await db.query(
-      `UPDATE orders 
-        SET customer_name=?, customer_phone=?, 
+      `UPDATE orders
+        SET status='PENDING',
+            customer_name=?, customer_phone=?,
             order_type=?, scheduled_time=?, delivery_address=?, 
             payment_method=?,
             message=?
-        WHERE order_id=?`,
+        WHERE order_id=? AND status='DRAFT'`,
       [
         customer_name,
         customer_phone,
@@ -284,36 +284,55 @@ export const createPayOSPayment = async (req, res) => {
 // ================= Webhook trả về của payos =================
 export const payOSWebhook = async (req, res) => {
   try {
-    console.log("Webhook raw:", req.body);
-
     const data = req.body;
 
-    //Verify signature
+    console.log("--- PAYOS WEBHOOK RECEIVED ---");
+    console.log(JSON.stringify(data, null, 2));
+
     const verified = await payos.webhooks.verify(
       data,
       req.headers["x-signature"]
     );
     if (!verified) {
+      console.log("!!! Webhook signature INVALID");
       return res.status(400).json({ message: "Invalid signature" });
     }
+    console.log("Webhook signature VERIFIED");
 
-    //Get orderCode from webhook
+
+    // Lấy orderCode
     const orderCode = data.data?.orderCode;
+    console.log(`Extracted orderCode: [${orderCode}]`);
 
+    // Kiểm tra điều kiện thanh toán
     if (data.code === "00" && data.success) {
-      await db.query(
-        `UPDATE orders SET status='PAID' WHERE order_id=? AND status='DRAFT'`,
+      console.log(`SUCCESS condition met for order [${orderCode}].`);
+
+      if (!orderCode) {
+          console.log("!!! ERROR: orderCode is undefined, cannot update DB.");
+          return res.json({ message: "Webhook processed, but orderCode missing." });
+      }
+
+      const [result] = await db.query(
+        `UPDATE orders SET status='PAID' WHERE order_id=? AND status='PENDING'`,
         [orderCode]
       );
+
+      console.log(`Database update result for [${orderCode}]:`, result.info);
+
     } else {
-      await db.query(`UPDATE orders SET status='CANCELLED' WHERE order_id=?`, [
+      console.log(`Webhook reported NON-SUCCESS. Code: [${data.code}], Success: [${data.success}]`);
+      // Xử lý các trường hợp thanh toán thất bại (ví dụ: 'CANCELLED')
+      await db.query(`UPDATE orders SET status='CANCELLED' WHERE order_id=? AND status='PENDING'`, [
         orderCode,
       ]);
+      console.log(`Order [${orderCode}] set to CANCELLED.`);
     }
 
     res.json({ message: "Webhook processed" });
+
   } catch (err) {
-    console.error("Webhook error:", err);
+    console.error("!!! CRITICAL WEBHOOK ERROR:", err);
     res.status(500).json({ message: "Webhook error" });
   }
 };

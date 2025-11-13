@@ -1,12 +1,13 @@
 // src/components/Header.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Search, Phone } from "lucide-react";
+import { ShoppingCart, Phone } from "lucide-react";
 import "../css/Header.scss";
 import LogoImage from "../assets/image/pizza.png";
 
-const Header = ({ orderId, cartCount }) => {
-    const navigate = useNavigate();
+const Header = ({ orderId, cartCount, branchId }) => {
+  const navigate = useNavigate();
+
   return (
     <header className="header">
       <div className="header-Top">
@@ -15,45 +16,55 @@ const Header = ({ orderId, cartCount }) => {
             src={LogoImage}
             alt="Logo"
             className="header-logo"
-            onClick={navigate }
+            onClick={() => {
+              // Quay về menu; cần branchId và orderId nếu route yêu cầu
+              if (branchId && orderId) {
+                navigate(`/menu/${branchId}/${orderId}`);
+              } else {
+                navigate("/branches"); // fallback nếu chưa có branch/order
+              }
+            }}
           />
           <p>Pizza Restaurant</p>
         </div>
 
         <div className="header-Top-Right">
           <p>Service</p>
-                  <div className="text-end">
-          
-        </div>
-        <button
+          <button
             className="btn btn-outline-primary"
             onClick={() => navigate(`/cart/${orderId}`)}
             disabled={!orderId}
           >
-             {cartCount > 0 && (
+            {cartCount > 0 && (
               <span className="position-absolute top-50 start-90 translate-middle badge rounded-pill bg-danger">
                 {cartCount}
               </span>
             )}
-             <ShoppingCart alt="shoppingCart" color="white" size={20} />
+            <ShoppingCart alt="shoppingCart" color="white" size={20} />
           </button>
         </div>
       </div>
+
       <div className="header-Bottom">
         <div className="header-Bottom-Left">
           <ul>
-            <li>About us</li>
-            <li>Menu</li>
-            <li onClick={() => navigate("/history")}> Order status </li>
+            <li onClick={() => navigate("/about")}>About us</li>
+            <li
+              onClick={() => {
+                if (branchId && orderId) {
+                  navigate(`/menu/${branchId}/${orderId}`);
+                } else {
+                  navigate("/branches");
+                }
+              }}
+            >
+              Menu
+            </li>
+            <li onClick={() => navigate("/history")}>Order status</li>
           </ul>
         </div>
         <div className="header-Bottom-Right">
-          <Phone
-            className="PhoneIcon"
-            alt="Phone"
-            color="black"
-            size={20}
-          ></Phone>
+          <Phone className="PhoneIcon" alt="Phone" color="black" size={20} />
           <p>1234567890</p>
         </div>
       </div>

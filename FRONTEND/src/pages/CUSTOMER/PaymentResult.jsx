@@ -1,13 +1,18 @@
-// pages/PaymentResult.jsx
-export default function PaymentResult({ status }) {
-  return (
-    <div className="container mt-5 text-center">
-      {status === "success" ? (
-        <h2 className="text-success">🎉 Thanh toán thành công!</h2>
-      ) : (
-        <h2 className="text-danger">❌ Thanh toán thất bại hoặc đã hủy!</h2>
-      )}
-      <a href="/menu" className="btn btn-primary mt-3">Quay lại Menu</a>
-    </div>
-  );
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import API from "../../api/api";
+import { TextAlignCenter } from "lucide-react";
+
+export default function PaymentResult() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+// payment-success page
+useEffect(() => {
+  // chỉ show loading hoặc redirect sang history
+  navigate("/history");
+}, []);
+
+
+  return <p style={TextAlignCenter}>Processing payment result...</p>;
 }

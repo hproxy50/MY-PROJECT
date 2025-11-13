@@ -67,7 +67,7 @@ export default function Cart() {
 
   return (
     <>
-      <HeaderStatus orderId={orderId} />
+      <HeaderStatus orderId={orderId} branchId={order?.branch_id} />
       <div className="cart-page">
         <div className="body">
           <div className="body-top">

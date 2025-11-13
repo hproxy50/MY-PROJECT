@@ -20,7 +20,7 @@ export const getOrderHistory = async (req, res) => {
           b.name AS branch_name
         FROM orders o
         JOIN branches b ON o.branch_id = b.branch_id
-        WHERE o.user_id = ? 
+        WHERE o.user_id = ?
           AND o.status NOT IN ('DRAFT')
         ORDER BY o.created_at DESC`,
       [userId]
