@@ -2,7 +2,6 @@ console.log("--- ordersController.js ĐÃ ĐƯỢC TẢI (PHIÊN BẢN MỚI) --
 import db from "../config/db.js";
 import payos from "../config/payos.js";
 
-
 // ================= LẤY DỮ LIỆU TRANG CHECKOUT =================
 export const getCheckoutInfo = async (req, res) => {
   try {
@@ -270,8 +269,8 @@ export const createPayOSPayment = async (req, res) => {
       orderCode: order.order_id,
       amount,
       description: `Order payment #${order.order_id}`,
-      returnUrl: `http://localhost:5173/payment-success?orderId=${order.order_id}`,
-      cancelUrl: `http://localhost:5173/payment-cancel?orderId=${order.order_id}`,
+      returnUrl: `http://localhost:5173/payment-success?orderId=${order.order_id}&branchId=${order.branch_id}`,
+      cancelUrl: `http://localhost:5173/payment-cancel?orderId=${order.order_id}&branchId=${order.branch_id}`,
     });
 
     res.json({ paymentUrl: response.checkoutUrl });
@@ -299,7 +298,6 @@ export const payOSWebhook = async (req, res) => {
     }
     console.log("Webhook signature VERIFIED");
 
-
     // Lấy orderCode
     const orderCode = data.data?.orderCode;
     console.log(`Extracted orderCode: [${orderCode}]`);
@@ -309,30 +307,56 @@ export const payOSWebhook = async (req, res) => {
       console.log(`SUCCESS condition met for order [${orderCode}].`);
 
       if (!orderCode) {
-          console.log("!!! ERROR: orderCode is undefined, cannot update DB.");
-          return res.json({ message: "Webhook processed, but orderCode missing." });
+        console.log("!!! ERROR: orderCode is undefined, cannot update DB.");
+        return res.json({
+          message: "Webhook processed, but orderCode missing.",
+        });
       }
 
       const [result] = await db.query(
-        `UPDATE orders SET status='PAID' WHERE order_id=? AND status='PENDING'`,
+        `UPDATE orders SET status='PREPARING' WHERE order_id=? AND status='PENDING'`,
         [orderCode]
       );
 
       console.log(`Database update result for [${orderCode}]:`, result.info);
-
     } else {
-      console.log(`Webhook reported NON-SUCCESS. Code: [${data.code}], Success: [${data.success}]`);
+      console.log(
+        `Webhook reported NON-SUCCESS. Code: [${data.code}], Success: [${data.success}]`
+      );
       // Xử lý các trường hợp thanh toán thất bại (ví dụ: 'CANCELLED')
-      await db.query(`UPDATE orders SET status='CANCELLED' WHERE order_id=? AND status='PENDING'`, [
-        orderCode,
-      ]);
+      await db.query(
+        `UPDATE orders SET status='CANCELLED' WHERE order_id=? AND status='PENDING'`,
+        [orderCode]
+      );
       console.log(`Order [${orderCode}] set to CANCELLED.`);
     }
 
     res.json({ message: "Webhook processed" });
-
   } catch (err) {
     console.error("!!! CRITICAL WEBHOOK ERROR:", err);
     res.status(500).json({ message: "Webhook error" });
+  }
+};
+
+// ================= HỦY ĐƠN HÀNG BỞI NGƯỜI DÙNG =================
+export const cancelOrderByUser = async (req, res) => {
+  try {
+    const { id } = req.params; // order_id
+    const userId = req.user.user_id;
+
+    const [result] = await db.query(
+      `UPDATE orders 
+      SET status='CANCELED' 
+      WHERE order_id=? AND user_id=? AND status='PENDING'`,
+      [id, userId]
+    );
+
+    console.log(
+      `User requested cancel for order ${id}. Rows affected: ${result.affectedRows}`
+    );
+    return res.json({ message: "Cancellation request processed." });
+  } catch (error) {
+    console.error("cancelOrderByUser error:", error);
+    return res.status(500).json({ message: "Server error", error });
   }
 };
