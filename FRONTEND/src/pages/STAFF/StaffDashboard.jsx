@@ -14,7 +14,8 @@ import { Routes, Route, Link } from "react-router-dom";
 import StaffOrder from "./StaffOrder"
 import StaffMenu from "./StaffMenu";
 import StaffProduct from "./StaffProduct";
-import StaffPromo from "./StaffPromo";
+import StaffCategory from "./StaffCategory";
+
 // ----- Sidebar Content (Tách riêng nội dung để tái sử dụng) -----
 function SidebarContent({ onLinkClick }) {
   // onLinkClick để đóng Offcanvas khi bấm link trên mobile
@@ -22,6 +23,9 @@ function SidebarContent({ onLinkClick }) {
     <Nav className="flex-column">
       <Nav.Link as={Link} to="/staff/dashboard" className="text-white" onClick={onLinkClick}>
         Dashboard
+      </Nav.Link>
+      <Nav.Link as={Link} to="/staff/category" className="text-white" onClick={onLinkClick}>
+        Category
       </Nav.Link>
       <Nav.Link as={Link} to="/staff/menu" className="text-white" onClick={onLinkClick}>
         Menu
@@ -31,9 +35,6 @@ function SidebarContent({ onLinkClick }) {
       </Nav.Link>
       <Nav.Link as={Link} to="/staff/products" className="text-white" onClick={onLinkClick}>
         Products
-      </Nav.Link>
-      <Nav.Link as={Link} to="/staff/settings" className="text-white" onClick={onLinkClick}>
-        Settings
       </Nav.Link>
     </Nav>
   );
@@ -151,7 +152,7 @@ export default function StaffDashboard() {
               <Route path="menu" element={<StaffMenu />} />
               <Route path="orders" element={<StaffOrder/>} />
               <Route path="products" element={<StaffProduct/>} />
-              <Route path="promo" element={<StaffPromo/>} />
+              <Route path="category" element={<StaffCategory/>} />
             </Routes>
           </Col>
         </Row>

@@ -420,7 +420,7 @@ export default function History() {
                   )}
                   <p>
                     <strong>Scheduled time:</strong>{" "}
-                    {selectedOrder.scheduled_time || "N/A"}
+                    {new Date(selectedOrder.scheduled_time).toLocaleString()}
                   </p>
                   <p>
                     <strong>Branch:</strong> {selectedOrder.branch_name}
