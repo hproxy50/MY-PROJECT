@@ -14,6 +14,7 @@ import { Routes, Route, Link } from "react-router-dom";
 import StaffOrder from "./StaffOrder"
 import StaffMenu from "./StaffMenu";
 import StaffProduct from "./StaffProduct";
+import StaffPromo from "./StaffPromo";
 // ----- Sidebar Content (Tách riêng nội dung để tái sử dụng) -----
 function SidebarContent({ onLinkClick }) {
   // onLinkClick để đóng Offcanvas khi bấm link trên mobile
@@ -150,6 +151,7 @@ export default function StaffDashboard() {
               <Route path="menu" element={<StaffMenu />} />
               <Route path="orders" element={<StaffOrder/>} />
               <Route path="products" element={<StaffProduct/>} />
+              <Route path="promo" element={<StaffPromo/>} />
             </Routes>
           </Col>
         </Row>

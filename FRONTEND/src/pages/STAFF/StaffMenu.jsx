@@ -6,11 +6,10 @@ import {
   Row,
   Col,
   InputGroup,
-  Card, 
+  Card,
   Table,
 } from "react-bootstrap";
 import API from "../../api/api";
-
 
 export default function StaffMenu() {
   const [menuItems, setMenuItems] = useState([]);
@@ -67,7 +66,7 @@ export default function StaffMenu() {
           stock_quantity: detail.stock_quantity ?? "",
           category_id: detail.category_id,
           is_available: detail.is_available ?? 1,
-          branch_id: detail.branch_id ?? "", 
+          branch_id: detail.branch_id ?? "",
         });
 
         const groups = (detail.optionGroups || []).map((g) => ({
@@ -101,9 +100,9 @@ export default function StaffMenu() {
         price: "",
         description: "",
         image: null,
-        stock_quantity: "",
+        stock_quantity: 0,
         category_id: "",
-        is_available: 1,
+        is_available: 0,
         branch_id: "",
       });
       setOptionsDef([]);
@@ -116,7 +115,19 @@ export default function StaffMenu() {
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     if (type === "file") return;
-    setFormData({ ...formData, [name]: value });
+
+    if (name === "stock_quantity") {
+      const stockVal = value === "" ? "" : Number(value);
+      if (stockVal <= 0 && value !== "") {
+        setFormData({ ...formData, stock_quantity: value, is_available: 0 });
+      } else if (stockVal > 0) {
+        setFormData({ ...formData, stock_quantity: value, is_available: 1 });
+      } else {
+        setFormData({ ...formData, stock_quantity: "" });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleImageChange = (e) => {
@@ -185,9 +196,24 @@ export default function StaffMenu() {
       data.append("price", formData.price);
       data.append("description", formData.description || "");
       data.append("category_id", formData.category_id);
-      if (formData.stock_quantity !== "")
-        data.append("stock_quantity", formData.stock_quantity);
-      data.append("is_available", formData.is_available ?? 1);
+      let stock_qty_to_send = 0;
+
+      if (formData.stock_quantity !== "" && formData.stock_quantity !== null) {
+        stock_qty_to_send = Number(formData.stock_quantity);
+        if (isNaN(stock_qty_to_send)) {
+          alert("The inventory quantity must be a number.");
+          return;
+        }
+        if (stock_qty_to_send < 0) {
+          alert("The inventory quantity must not be less than 0.");
+          return;
+        }
+      }
+
+      const final_is_available = stock_qty_to_send > 0 ? 1 : 0;
+
+      data.append("stock_quantity", stock_qty_to_send);
+      data.append("is_available", final_is_available);
 
       if (formData.image && formData.image instanceof File) {
         data.append("image", formData.image);
@@ -456,9 +482,17 @@ export default function StaffMenu() {
                   <Form.Label>Trạng thái</Form.Label>
                   <Form.Select
                     name="is_available"
-                    value={formData.is_available}
+                    value={
+                      Number(formData.stock_quantity) > 0
+                        ? formData.is_available
+                        : 0
+                    }
                     onChange={(e) =>
                       setFormData({ ...formData, is_available: e.target.value })
+                    }
+                    disabled={
+                      Number(formData.stock_quantity) <= 0 ||
+                      formData.stock_quantity === ""
                     }
                   >
                     <option value={1}>Còn hàng</option>
@@ -470,31 +504,16 @@ export default function StaffMenu() {
                   <Form.Label>Số lượng</Form.Label>
                   <Form.Control
                     type="number"
+                    min="0"
                     name="stock_quantity"
                     value={formData.stock_quantity}
                     onChange={handleChange}
-                    placeholder="Để trống hoặc 0"
+                    placeholder="Default is 0"
                   />
                 </Form.Group>
-
-                {/* Đã ẩn trường Branch ID. 
-                  Backend sẽ tự lấy branch_id từ token của STAFF.
-                  Chỉ ADMIN mới cần chọn (nếu có).
-                */}
-                {/* <Form.Group className="mb-2">
-                  <Form.Label>Branch ID (chỉ cho ADMIN)</Form.Label>
-                  <Form.Control
-                    name="branch_id"
-                    value={formData.branch_id}
-                    onChange={handleChange}
-                  />
-                </Form.Group> */}
               </Col>
             </Row>
-
             <hr />
-
-            {/* OptionsDef UI (Giữ nguyên) */}
             <div>
               <div className="d-flex justify-content-between align-items-center">
                 <h5>Tùy chỉnh món (Options)</h5>

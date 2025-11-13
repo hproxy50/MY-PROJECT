@@ -339,7 +339,7 @@ export const payOSWebhook = async (req, res) => {
           await connection.query(
             `UPDATE menu_items
             SET stock_quantity = stock_quantity - ?
-            WHERE item_id = ? AND stock_quantity IS NOT NULL`,
+            WHERE item_id = ?`,
             [item.quantity, item.item_id]
           );
         }
@@ -373,12 +373,11 @@ export const payOSWebhook = async (req, res) => {
         });
       } finally {
         connection.release();
-      } // ================================================================ // KẾT THÚC LOGIC SỬA ĐỔI // ================================================================
+      } 
     } else {
       console.log(
         `Webhook reported NON-SUCCESS. Code: [${data.code}], Success: [${data.success}]`
       );
-      // Xử lý các trường hợp thanh toán thất bại (ví dụ: 'CANCELLED')
       await db.query(
         `UPDATE orders SET status='CANCELLED' WHERE order_id=? AND status='PENDING'`,
         [orderCode]

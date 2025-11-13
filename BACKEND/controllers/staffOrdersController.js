@@ -38,7 +38,7 @@ export const getPendingOrdersForStaff = async (req, res) => {
       [branchId]
     );
 
-    if (!orders || orders.length === 0) { 
+    if (!orders || orders.length === 0) {
       return res.json({ orders: [] });
     }
 
@@ -163,7 +163,7 @@ export const approveOrders = async (req, res) => {
   const branchId = req.user.branch_id;
   let orderIds = [];
 
-  // 1. Lấy orderIds từ body (giống code cũ)
+  // 1. Lấy orderIds từ body (giữ nguyên)
   if (req.body.order_ids && Array.isArray(req.body.order_ids)) {
     orderIds = req.body.order_ids
       .map((i) => Number(i))
@@ -184,29 +184,27 @@ export const approveOrders = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // 3. Lấy tất cả items từ các order_ids (chỉ các đơn PENDING, thuộc branch này)
-    // và gộp tổng số lượng cần trừ cho mỗi item_id
     const [itemsToUpdate] = await connection.query(
       `SELECT
-         oi.item_id,
-         SUM(oi.quantity) AS total_quantity_needed,
-         mi.name AS item_name,
-         mi.stock_quantity AS current_stock
-       FROM order_items oi
-       JOIN orders o ON oi.order_id = o.order_id
-       JOIN menu_items mi ON oi.item_id = mi.item_id
-       WHERE o.order_id IN (?)
-         AND o.branch_id = ?
-         AND o.status = 'PENDING'
-         AND o.payment_method = 'CASH'
-         AND mi.stock_quantity IS NOT NULL
+          oi.item_id,
+          SUM(oi.quantity) AS total_quantity_needed,
+          mi.name AS item_name,
+          mi.stock_quantity AS current_stock
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.order_id
+      JOIN menu_items mi ON oi.item_id = mi.item_id
+      WHERE o.order_id IN (?)
+        AND o.branch_id = ?
+        AND o.status = 'PENDING'
+        AND o.payment_method = 'CASH'
        GROUP BY oi.item_id, mi.name, mi.stock_quantity`,
       [orderIds, branchId]
     );
 
-    // 4. Kiểm tra tồn kho
+    // 4. Kiểm tra tồn kho (giữ nguyên)
     const insufficientStockItems = [];
     for (const item of itemsToUpdate) {
+      // Logic này giờ sẽ chạy cho TẤT CẢ các món
       if (item.current_stock < item.total_quantity_needed) {
         insufficientStockItems.push({
           name: item.item_name,
@@ -217,7 +215,6 @@ export const approveOrders = async (req, res) => {
       }
     }
 
-    // Nếu có 1 món không đủ, báo lỗi và rollback
     if (insufficientStockItems.length > 0) {
       await connection.rollback();
       return res.status(400).json({
@@ -226,10 +223,8 @@ export const approveOrders = async (req, res) => {
       });
     }
 
-    // 5. Nếu đủ kho, tiến hành trừ kho
+    // 5. Nếu đủ kho, tiến hành trừ kho (giữ nguyên)
     for (const item of itemsToUpdate) {
-      // Dùng UPDATE ... SET stock = stock - X
-      // Điều này an toàn nếu có 2 request duyệt cùng lúc (atomic)
       await connection.query(
         `UPDATE menu_items
          SET stock_quantity = stock_quantity - ?
@@ -238,19 +233,18 @@ export const approveOrders = async (req, res) => {
       );
     }
 
-    // 6. Cập nhật is_available = 0 cho các món vừa bị trừ về 0
-    // (Chỉ cần chạy cho các item_id vừa bị ảnh hưởng)
+    // 6. Cập nhật is_available = 0 (giữ nguyên)
     const itemIdsToCheck = itemsToUpdate.map((i) => i.item_id);
     if (itemIdsToCheck.length > 0) {
       await connection.query(
         `UPDATE menu_items
          SET is_available = 0
-         WHERE item_id IN (?) AND stock_quantity = 0`,
+         WHERE item_id IN (?) AND stock_quantity <= 0`, 
         [itemIdsToCheck]
       );
     }
 
-    // 7. Cập nhật trạng thái đơn hàng (chỉ các đơn PENDING thuộc branch)
+    // 7. Cập nhật trạng thái đơn hàng (giữ nguyên)
     const [updateOrdersResult] = await connection.query(
       `UPDATE orders
        SET status = 'PREPARING'
@@ -279,19 +273,9 @@ export const approveOrders = async (req, res) => {
   }
 };
 
-/**
- * BỔ SUNG:
- * POST /staff/orders/cancel
- * Body: { order_ids: [1,2,3] } (hoặc { order_id: 1 } )
- * Chuyển trạng thái từ PENDING -> CANCELED.
- * (Logic này áp dụng cho PENDING, không phải PREPARING như yêu cầu
- * vì component này chỉ quản lý đơn PENDING)
- */
-export const cancelOrders = async (req, res) => {
-  // ... (Giữ nguyên code cũ) ...
-  // Lý do: Đơn PENDING bị hủy thì chưa trừ kho, nên không cần hoàn kho.
-  // Code cũ của bạn (chỉ đổi status) là ĐÚNG.
 
+
+export const cancelOrders = async (req, res) => {
   try {
     const err = ensureStaff(req, res);
     if (err) return;

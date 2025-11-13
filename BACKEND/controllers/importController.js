@@ -32,52 +32,69 @@ export const createImport = async (req, res) => {
   }
 };
 
-// ================= THÊM HÀNG VÀO PHIẾU NHẬP =================
 export const addItemToImport = async (req, res) => {
+  const { import_id, items } = req.body;
+
+  // 1. Validate dữ liệu
+  if (!import_id || !items || !Array.isArray(items) || items.length === 0) {
+    return res
+      .status(400)
+      .json({
+        message: "Dữ liệu không hợp lệ. Cần import_id và một mảng 'items'.",
+      });
+  }
+
+  // 2. Kiểm tra phiếu nhập
+  const [imports] = await db.query(
+    "SELECT * FROM imports WHERE import_id=? AND status='PENDING'",
+    [import_id]
+  );
+  if (imports.length === 0) {
+    return res
+      .status(404)
+      .json({ message: "Phiếu nhập không tồn tại hoặc đã hoàn tất" });
+  }
+
+  // 3. Bắt đầu Transaction
+  const connection = await db.getConnection();
   try {
-    const { import_id, item_id, quantity } = req.body;
+    await connection.beginTransaction();
 
-    if (!import_id || !item_id || !quantity) {
-      return res.status(400).json({ message: "Thiếu dữ liệu" });
-    }
-    if (quantity < 1) {
-      return res.status(400).json({ message: "Số lượng phải >= 1" });
-    }
-
-    // Kiểm tra import có tồn tại và đang PENDING
-    const [imports] = await db.query(
-      "SELECT * FROM imports WHERE import_id=? AND status='PENDING'",
-      [import_id]
-    );
-    if (imports.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Phiếu nhập không tồn tại hoặc đã hoàn tất" });
+    // 4. Chuẩn bị dữ liệu cho batch insert
+    const values = [];
+    for (const item of items) {
+      const qty = Number(item.quantity);
+      if (!item.item_id || isNaN(qty) || qty < 1) {
+        // Nếu có 1 item không hợp lệ, hủy toàn bộ
+        throw new Error(
+          `Sản phẩm (ID: ${item.item_id}) có số lượng không hợp lệ: ${item.quantity}`
+        );
+      }
+      values.push([import_id, item.item_id, qty]);
     }
 
-    // Kiểm tra xem item đã có trong phiếu chưa
-    const [existing] = await db.query(
-      "SELECT * FROM import_items WHERE import_id=? AND item_id=?",
-      [import_id, item_id]
+    // 5. Query batch insert
+    // Logic này giả định bạn chỉ insert 1 lần.
+    // Nếu bạn muốn "thêm" vào phiếu đã có, bạn cần logic "ON DUPLICATE KEY UPDATE"
+    // Nhưng với UI mới, chúng ta sẽ gửi toàn bộ 1 lần -> chỉ cần INSERT
+    await connection.query(
+      "INSERT INTO import_items (import_id, item_id, quantity) VALUES ?",
+      [values]
     );
 
-    if (existing.length > 0) {
-      const newQty = existing[0].quantity + quantity;
-      await db.query(
-        "UPDATE import_items SET quantity=? WHERE import_item_id=?",
-        [newQty, existing[0].import_item_id]
-      );
-    } else {
-      await db.query(
-        `INSERT INTO import_items (import_id, item_id, quantity)
-         VALUES (?, ?, ?)`,
-        [import_id, item_id, quantity]
-      );
-    }
-
-    return res.json({ message: "Thêm hàng vào phiếu nhập thành công" });
+    // 6. Commit
+    await connection.commit();
+    return res.json({ message: "Thêm hàng loạt vào phiếu nhập thành công" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    // 7. Rollback nếu lỗi
+    await connection.rollback();
+    console.error("Lỗi khi thêm hàng loạt vào phiếu:", error);
+    return res
+      .status(500)
+      .json({ message: "Lỗi server", error: error.message });
+  } finally {
+    // 8. Trả connection
+    connection.release();
   }
 };
 
@@ -163,7 +180,7 @@ export const completeImport = async (req, res) => {
   try {
     const { id } = req.params; // import_id
 
-    // Kiểm tra phiếu nhập
+    // (Code kiểm tra phiếu nhập và lấy items giữ nguyên)
     const [imports] = await db.query(
       "SELECT * FROM imports WHERE import_id=? AND status='PENDING'",
       [id]
@@ -173,31 +190,28 @@ export const completeImport = async (req, res) => {
         .status(404)
         .json({ message: "Phiếu nhập không tồn tại hoặc đã hoàn tất" });
     }
-
-    // Lấy các import_items
     const [items] = await db.query(
       "SELECT * FROM import_items WHERE import_id=?",
       [id]
     );
 
     // *** THAY ĐỔI LOGIC ***
-    // Cộng stock_quantity và cập nhật is_available
+    // Bỏ check `IS NOT NULL`, luôn cập nhật stock và availability
     for (const item of items) {
       await db.query(
         `UPDATE menu_items
-        SET
-        stock_quantity = stock_quantity + ?,
-        is_available = CASE
-            
-          WHEN stock_quantity IS NOT NULL THEN
-              CASE WHEN (stock_quantity + ?) > 0 THEN 1 ELSE 0 END
-            ELSE is_available
-          END
-        WHERE item_id = ?`,
+         SET
+           stock_quantity = stock_quantity + ?,
+           is_available = CASE
+             -- Luôn kiểm tra, vì stock_quantity không còn là NULL
+             WHEN (stock_quantity + ?) > 0 THEN 1
+             ELSE 0
+           END
+         WHERE item_id = ?`,
         [item.quantity, item.quantity, item.item_id] // Truyền item.quantity 2 lần
       );
     }
-    // *** KẾT THÚC THAY ĐỔI ***
+
     // Đổi status -> COMPLETE
     await db.query("UPDATE imports SET status='COMPLETE' WHERE import_id=?", [
       id,
