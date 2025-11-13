@@ -172,6 +172,10 @@ export default function History() {
         return new Date(b.created_at) - new Date(a.created_at);
       }
 
+      // if (filterStatus === "CANCELED") {
+      //   return new Date(b.created_at) - new Date(a.created_at);
+      // }
+
       return 0;
     });
 

@@ -7,7 +7,10 @@ export const createImport = async (req, res) => {
     const { note } = req.body;
 
     // Lấy branch_id của staff
-    const [staff] = await db.query("SELECT branch_id FROM users WHERE user_id=? AND role='STAFF'", [staffId]);
+    const [staff] = await db.query(
+      "SELECT branch_id FROM users WHERE user_id=? AND role='STAFF'",
+      [staffId]
+    );
     if (staff.length === 0) {
       return res.status(403).json({ message: "Không phải nhân viên hợp lệ" });
     }
@@ -42,9 +45,14 @@ export const addItemToImport = async (req, res) => {
     }
 
     // Kiểm tra import có tồn tại và đang PENDING
-    const [imports] = await db.query("SELECT * FROM imports WHERE import_id=? AND status='PENDING'", [import_id]);
+    const [imports] = await db.query(
+      "SELECT * FROM imports WHERE import_id=? AND status='PENDING'",
+      [import_id]
+    );
     if (imports.length === 0) {
-      return res.status(404).json({ message: "Phiếu nhập không tồn tại hoặc đã hoàn tất" });
+      return res
+        .status(404)
+        .json({ message: "Phiếu nhập không tồn tại hoặc đã hoàn tất" });
     }
 
     // Kiểm tra xem item đã có trong phiếu chưa
@@ -78,7 +86,10 @@ export const getImportById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [imports] = await db.query("SELECT * FROM imports WHERE import_id=?", [id]);
+    const [imports] = await db.query(
+      "SELECT * FROM imports WHERE import_id=?",
+      [id]
+    );
     if (imports.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy phiếu nhập" });
     }
@@ -107,12 +118,18 @@ export const updateImportItem = async (req, res) => {
       return res.status(400).json({ message: "Số lượng phải >= 1" });
     }
 
-    const [rows] = await db.query("SELECT * FROM import_items WHERE import_item_id=?", [id]);
+    const [rows] = await db.query(
+      "SELECT * FROM import_items WHERE import_item_id=?",
+      [id]
+    );
     if (rows.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy import_item" });
     }
 
-    await db.query("UPDATE import_items SET quantity=? WHERE import_item_id=?", [quantity, id]);
+    await db.query(
+      "UPDATE import_items SET quantity=? WHERE import_item_id=?",
+      [quantity, id]
+    );
 
     return res.json({ message: "Cập nhật số lượng thành công" });
   } catch (error) {
@@ -125,7 +142,10 @@ export const deleteImportItem = async (req, res) => {
   try {
     const { id } = req.params; // import_item_id
 
-    const [rows] = await db.query("SELECT * FROM import_items WHERE import_item_id=?", [id]);
+    const [rows] = await db.query(
+      "SELECT * FROM import_items WHERE import_item_id=?",
+      [id]
+    );
     if (rows.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy import_item" });
     }
@@ -144,26 +164,48 @@ export const completeImport = async (req, res) => {
     const { id } = req.params; // import_id
 
     // Kiểm tra phiếu nhập
-    const [imports] = await db.query("SELECT * FROM imports WHERE import_id=? AND status='PENDING'", [id]);
+    const [imports] = await db.query(
+      "SELECT * FROM imports WHERE import_id=? AND status='PENDING'",
+      [id]
+    );
     if (imports.length === 0) {
-      return res.status(404).json({ message: "Phiếu nhập không tồn tại hoặc đã hoàn tất" });
+      return res
+        .status(404)
+        .json({ message: "Phiếu nhập không tồn tại hoặc đã hoàn tất" });
     }
 
     // Lấy các import_items
-    const [items] = await db.query("SELECT * FROM import_items WHERE import_id=?", [id]);
+    const [items] = await db.query(
+      "SELECT * FROM import_items WHERE import_id=?",
+      [id]
+    );
 
-    // Cộng stock_quantity cho từng item
+    // *** THAY ĐỔI LOGIC ***
+    // Cộng stock_quantity và cập nhật is_available
     for (const item of items) {
       await db.query(
-        `UPDATE menu_items SET stock_quantity = stock_quantity + ? WHERE item_id=?`,
-        [item.quantity, item.item_id]
+        `UPDATE menu_items
+        SET
+        stock_quantity = stock_quantity + ?,
+        is_available = CASE
+            
+          WHEN stock_quantity IS NOT NULL THEN
+              CASE WHEN (stock_quantity + ?) > 0 THEN 1 ELSE 0 END
+            ELSE is_available
+          END
+        WHERE item_id = ?`,
+        [item.quantity, item.quantity, item.item_id] // Truyền item.quantity 2 lần
       );
     }
-
+    // *** KẾT THÚC THAY ĐỔI ***
     // Đổi status -> COMPLETE
-    await db.query("UPDATE imports SET status='COMPLETE' WHERE import_id=?", [id]);
+    await db.query("UPDATE imports SET status='COMPLETE' WHERE import_id=?", [
+      id,
+    ]);
 
-    return res.json({ message: "Hoàn tất phiếu nhập, đã cộng stock thành công" });
+    return res.json({
+      message: "Hoàn tất phiếu nhập, đã cộng stock thành công",
+    });
   } catch (error) {
     return res.status(500).json({ message: "Lỗi server", error });
   }

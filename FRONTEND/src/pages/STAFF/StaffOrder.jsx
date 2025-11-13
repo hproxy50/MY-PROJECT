@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Card, Table, Button, Spinner, Modal, Form, Badge } from "react-bootstrap";
+import {
+  Card,
+  Table,
+  Button,
+  Spinner,
+  Modal,
+  Form,
+  Badge,
+} from "react-bootstrap";
 import API from "../../api/api";
 
-export default function StaffIncomingOrders() {
+export default function StaffOrder() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
@@ -16,14 +24,12 @@ export default function StaffIncomingOrders() {
       const res = await API.get(`/staff/orders`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const newOrders = res.data.orders || [];
-      setOrders((prevOrders) => {
-        const prevIds = new Set(prevOrders.map((o) => o.order_id));
-        const newIds = new Set(newOrders.map((o) => o.order_id));
-        const added = newOrders.filter((o) => !prevIds.has(o.order_id));
-        const stillExist = prevOrders.filter((o) => newIds.has(o.order_id));
-        return [...added, ...stillExist];
-      });
+
+      // THAY ĐỔI:
+      // Logic cũ gộp mảng phức tạp và không cần thiết.
+      // API luôn trả về danh sách PENDING mới nhất,
+      // nên ta chỉ cần ghi đè state là đủ.
+      setOrders(res.data.orders || []);
     } catch (err) {
       console.error("Lỗi lấy đơn:", err);
     } finally {
@@ -33,9 +39,9 @@ export default function StaffIncomingOrders() {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000);
+    const interval = setInterval(fetchOrders, 5000); // Lấy đơn mới mỗi 5s
     return () => clearInterval(interval);
-  }, []);
+  }, []); // THAY ĐỔI: Bỏ [token] khỏi dependency array, nếu token thay đổi component nên được unmount/remount.
 
   const toggleSelect = (id) => {
     const s = new Set(selected);
@@ -44,7 +50,7 @@ export default function StaffIncomingOrders() {
   };
 
   const handleApproveSingle = async (orderId) => {
-    if (!window.confirm("Xác nhận duyệt đơn này sang PREPARING?")) return;
+    if (!window.confirm("Xác nhận DUYỆT đơn này sang PREPARING?")) return;
     try {
       const res = await API.post(
         `/staff/orders/approve`,
@@ -52,7 +58,7 @@ export default function StaffIncomingOrders() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert(res.data.message || "Duyệt thành công!");
-      fetchOrders();
+      fetchOrders(); // Tải lại danh sách
       setSelected(new Set());
     } catch (err) {
       alert(err.response?.data?.message || "Lỗi duyệt đơn!");
@@ -60,7 +66,7 @@ export default function StaffIncomingOrders() {
   };
 
   const handleApproveBulk = async () => {
-    if (selected.size === 0) return alert("Chưa chọn đơn nào!");
+    if (selected.size === 0) return alert("Chưa chọn đơn nào để duyệt!");
     if (!window.confirm(`Duyệt ${selected.size} đơn sang PREPARING?`)) return;
     try {
       const res = await API.post(
@@ -69,14 +75,54 @@ export default function StaffIncomingOrders() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert(res.data.message || "Duyệt thành công!");
-      fetchOrders();
+      fetchOrders(); // Tải lại danh sách
       setSelected(new Set());
     } catch (err) {
       alert(err.response?.data?.message || "Lỗi duyệt nhiều đơn!");
     }
   };
 
+  // BỔ SUNG: Hàm hủy 1 đơn (PENDING -> CANCELED)
+  const handleCancelSingle = async (orderId) => {
+    if (!window.confirm("Xác nhận HỦY đơn hàng này? (Không thể hoàn tác)"))
+      return;
+    try {
+      const res = await API.post(
+        `/staff/orders/cancel`,
+        { order_id: orderId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert(res.data.message || "Hủy đơn thành công!");
+      fetchOrders(); // Tải lại danh sách
+      setSelected(new Set());
+    } catch (err) {
+      alert(err.response?.data?.message || "Lỗi hủy đơn!");
+    }
+  };
+
+  // BỔ SUNG: Hàm hủy nhiều đơn (PENDING -> CANCELED)
+  const handleCancelBulk = async () => {
+    if (selected.size === 0) return alert("Chưa chọn đơn nào để hủy!");
+    if (
+      !window.confirm(`Hủy ${selected.size} đơn đã chọn? (Không thể hoàn tác)`)
+    )
+      return;
+    try {
+      const res = await API.post(
+        `/staff/orders/cancel`,
+        { order_ids: Array.from(selected) },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert(res.data.message || "Hủy đơn thành công!");
+      fetchOrders(); // Tải lại danh sách
+      setSelected(new Set());
+    } catch (err) {
+      alert(err.response?.data?.message || "Lỗi hủy nhiều đơn!");
+    }
+  };
+
   const handleView = async (orderId) => {
+    // Hàm này giữ nguyên, nó gọi API getPendingOrderDetails
     try {
       const res = await API.get(`/staff/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -85,7 +131,7 @@ export default function StaffIncomingOrders() {
       setShowModal(true);
     } catch (err) {
       console.error("Lỗi lấy chi tiết đơn:", err);
-      alert("Không thể tải chi tiết đơn hàng!");
+      alert("Không thể tải chi tiết đơn hàng (có thể đơn vừa được duyệt/hủy)!");
     }
   };
 
@@ -98,10 +144,12 @@ export default function StaffIncomingOrders() {
     );
 
   return (
-    <div className="container my-4">
+    <>
       <div className="text-center mb-4">
         <h3 className="fw-bold mb-2">📦 Đơn hàng chờ duyệt</h3>
-        <p className="text-muted mb-0">Theo dõi và xử lý đơn hàng PENDING trong hệ thống</p>
+        <p className="text-muted mb-0">
+          Theo dõi và xử lý đơn hàng PENDING trong hệ thống
+        </p>
       </div>
 
       <Card className="shadow-lg border-0 rounded-4 mb-4">
@@ -110,6 +158,10 @@ export default function StaffIncomingOrders() {
             <div className="d-flex flex-wrap gap-2">
               <Button variant="success" onClick={handleApproveBulk}>
                 ✅ Duyệt các đơn đã chọn
+              </Button>
+              {/* BỔ SUNG: Nút hủy nhiều đơn */}
+              <Button variant="danger" onClick={handleCancelBulk}>
+                ❌ Hủy các đơn đã chọn
               </Button>
             </div>
             <div>
@@ -131,7 +183,9 @@ export default function StaffIncomingOrders() {
                           ? setSelected(new Set(orders.map((o) => o.order_id)))
                           : setSelected(new Set())
                       }
-                      checked={selected.size === orders.length && orders.length > 0}
+                      checked={
+                        selected.size === orders.length && orders.length > 0
+                      }
                     />
                   </th>
                   <th>#</th>
@@ -163,18 +217,23 @@ export default function StaffIncomingOrders() {
                       <td className="text-center">{idx + 1}</td>
                       <td>
                         <div className="fw-semibold">{order.customer_name}</div>
-                        <div className="text-muted small">{order.customer_phone}</div>
+                        <div className="text-muted small">
+                          {order.customer_phone}
+                        </div>
                         {order.order_type === "DELIVERY" && (
                           <div className="small text-muted mt-1">
-                            <i className="bi bi-geo-alt"></i> {order.delivery_address}
+                            <i className="bi bi-geo-alt"></i>{" "}
+                            {order.delivery_address}
                           </div>
                         )}
                       </td>
                       <td className="text-center">
                         {order.order_type === "DELIVERY" ? (
                           <Badge bg="info">🚚 Giao hàng</Badge>
+                        ) : order.order_type === "TAKEAWAY" ? ( // BỔ SUNG: Xử lý thêm loại TAKEAWAY
+                          <Badge bg="warning">🛍️ Mang về</Badge>
                         ) : (
-                          <Badge bg="warning">🏠 Tại quán</Badge>
+                          <Badge bg="primary">🏠 Tại quán</Badge>
                         )}
                       </td>
                       <td className="text-end fw-semibold">
@@ -204,6 +263,14 @@ export default function StaffIncomingOrders() {
                           >
                             Duyệt
                           </Button>
+                          {/* BỔ SUNG: Nút hủy 1 đơn */}
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            onClick={() => handleCancelSingle(order.order_id)}
+                          >
+                            Hủy
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -215,12 +282,15 @@ export default function StaffIncomingOrders() {
         </Card.Body>
       </Card>
 
-      {/* 🔍 Modal Chi tiết đơn */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
+      {/* 🔍 Modal Chi tiết đơn (Giữ nguyên) */}
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        size="lg"
+        centered
+      >
         <Modal.Header closeButton className="bg-light">
-          <Modal.Title>
-            Chi tiết đơn #{selectedOrder?.order_id}
-          </Modal.Title>
+          <Modal.Title>Chi tiết đơn #{selectedOrder?.order_id}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedOrder ? (
@@ -287,10 +357,12 @@ export default function StaffIncomingOrders() {
               </div>
             </>
           ) : (
-            <div className="text-center py-3 text-muted">Đang tải chi tiết...</div>
+            <div className="text-center py-3 text-muted">
+              Đang tải chi tiết...
+            </div>
           )}
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 }

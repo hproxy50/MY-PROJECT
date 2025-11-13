@@ -26,7 +26,9 @@ export const getMenuItems = async (req, res) => {
      mi.created_at
    FROM menu_items mi
    JOIN category c ON mi.category_id = c.category_id
-   WHERE mi.branch_id = ?`,
+   WHERE mi.branch_id = ? `,
+   // AND mi.is_available = 1
+   // getMenuItems2
       [branchId]
     );
 

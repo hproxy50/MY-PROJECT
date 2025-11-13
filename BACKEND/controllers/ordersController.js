@@ -312,13 +312,68 @@ export const payOSWebhook = async (req, res) => {
           message: "Webhook processed, but orderCode missing.",
         });
       }
+      const connection = await db.getConnection();
+      try {
+        await connection.beginTransaction();
 
-      const [result] = await db.query(
-        `UPDATE orders SET status='PREPARING' WHERE order_id=? AND status='PENDING'`,
-        [orderCode]
-      );
+        const [orders] = await connection.query(
+          `SELECT status FROM orders WHERE order_id = ? AND status = 'PENDING' FOR UPDATE`,
+          [orderCode]
+        );
 
-      console.log(`Database update result for [${orderCode}]:`, result.info);
+        if (orders.length === 0) {
+          await connection.rollback();
+          console.log(
+            `Order [${orderCode}] not found or not in PENDING state. Skipping.`
+          );
+          return res.json({ message: "Webhook processed, order not pending." });
+        }
+        const [itemsToDecrement] = await connection.query(
+          `SELECT item_id, quantity FROM order_items WHERE order_id = ?`,
+          [orderCode]
+        );
+
+        const itemIds = [];
+        for (const item of itemsToDecrement) {
+          itemIds.push(item.item_id);
+          await connection.query(
+            `UPDATE menu_items
+            SET stock_quantity = stock_quantity - ?
+            WHERE item_id = ? AND stock_quantity IS NOT NULL`,
+            [item.quantity, item.item_id]
+          );
+        }
+
+        if (itemIds.length > 0) {
+          await connection.query(
+            `UPDATE menu_items
+            SET is_available = 0
+            WHERE item_id IN (?) AND stock_quantity = 0`,
+            [itemIds]
+          );
+        }
+        const [result] = await connection.query(
+          `UPDATE orders SET status='PREPARING' WHERE order_id=? AND status='PENDING'`,
+          [orderCode]
+        );
+
+        await connection.commit();
+        console.log(
+          `Database update (PREPARING) and stock decrement complete for [${orderCode}]. Info:`,
+          result.info
+        );
+      } catch (err) {
+        await connection.rollback();
+        console.error(
+          `!!! CRITICAL WEBHOOK TRANSACTION ERROR for order [${orderCode}]:`,
+          err
+        );
+        return res.json({
+          message: "Webhook processed, DB transaction failed.",
+        });
+      } finally {
+        connection.release();
+      } // ================================================================ // KẾT THÚC LOGIC SỬA ĐỔI // ================================================================
     } else {
       console.log(
         `Webhook reported NON-SUCCESS. Code: [${data.code}], Success: [${data.success}]`

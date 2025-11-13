@@ -124,7 +124,7 @@ const Header = ({
           )}
         </div>
         <div className="header-Top-Right">
-          <p>Service</p>
+          <p>Cart</p>
           <button
             className="btn btn-outline-primary position-relative"
             onClick={() => navigate(`/cart/${orderId}`)}
@@ -142,6 +142,7 @@ const Header = ({
       <div className="header-Bottom">
         <div className="header-Bottom-Left">
           <ul>
+            <li>Log out</li>
             <li>About us</li>
             <li>Menu</li>
             <li onClick={() => navigate("/history")}>Order status</li>
