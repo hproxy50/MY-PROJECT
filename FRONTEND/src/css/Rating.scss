@@ -1,0 +1,196 @@
+$primary-color: #ff0000; 
+$gold-color: #fadb14; 
+$text-color: #333;
+$text-color-light: #777;
+$border-color: #eee;
+$background-light: #f9f9f9;
+$background-white: #ffffff;
+$container-max-width: 1200px;
+$border-radius: 8px;
+$box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+
+.rating-page {
+  max-width: $container-max-width;
+  margin: 20px auto;
+  padding: 24px;
+  background-color: $background-white;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+
+  &-back{
+    font-weight: 500;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+  }
+}
+
+.rating-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; 
+  padding-bottom: 20px;
+  border-bottom: 1px solid $border-color;
+  margin-bottom: 24px;
+
+  .store-info {
+    h1 {
+      font-size: 24px;
+      color: $text-color;
+      margin: 0 0 4px 0;
+    }
+    h2 {
+      font-size: 18px;
+      color: $text-color-light;
+      margin: 0;
+      font-weight: 500;
+    }
+  }
+
+  .average-rating {
+    text-align: center;
+    background-color: $background-light;
+    padding: 12px 20px;
+    border-radius: $border-radius;
+    border: 1px solid $border-color;
+
+    .average-score {
+      font-size: 32px;
+      font-weight: bold;
+      color: $primary-color; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px; // star gap
+
+      .star-icon {
+        font-size: 24px; // star size
+      }
+    }
+    span {
+      font-size: 14px;
+      color: $text-color-light;
+    }
+  }
+}
+
+.rating-content {
+  .filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    background-color: $background-light;
+    padding: 16px;
+    border-radius: $border-radius;
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: 12px; // Khoảng cách giữa 2 select
+
+      select {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: $border-radius;
+        font-size: 14px;
+        background-color: $background-white;
+      }
+    }
+  }
+
+  /* COMMENT: Danh sách các thẻ review */
+  .review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; // Khoảng cách giữa các review
+  }
+}
+
+/* COMMENT: CSS cho từng thẻ review (ReviewCard) */
+.review-card {
+  background-color: $background-white;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: $box-shadow; 
+  }
+
+  .review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .review-user {
+    display: flex;
+    flex-direction: column;
+
+    .user-name {
+      font-weight: bold;
+      font-size: 16px;
+      color: $text-color;
+    }
+    .review-date {
+      font-size: 13px;
+      color: $text-color-light;
+    }
+  }
+
+  .review-stars {
+    font-size: 18px; //Star size
+    .star-filled {
+      color: $gold-color;
+    }
+    .star-empty {
+      color: #ccc;
+    }
+  }
+
+  .review-comment {
+    font-size: 15px;
+    color: $text-color;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .review-products {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .product-item {
+    display: flex;
+    align-items: center;
+    background-color: $background-light;
+    padding: 8px;
+    border-radius: $border-radius;
+
+    img {
+      width: 50px;
+      height: 50px;
+      border-radius: 4px;
+      margin-right: 12px;
+      object-fit: cover; 
+    }
+
+    .product-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: $text-color;
+    }
+  }
+}

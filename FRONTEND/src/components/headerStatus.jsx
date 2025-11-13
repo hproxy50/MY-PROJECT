@@ -54,7 +54,7 @@ const Header = ({ orderId, cartCount, branchId }) => {
                 if (branchId && orderId) {
                   navigate(`/menu/${branchId}/${orderId}`);
                 } else {
-                  navigate("/branches");
+                  navigate(-1)
                 }
               }}
             >

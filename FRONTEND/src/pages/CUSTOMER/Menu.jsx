@@ -9,8 +9,8 @@ export default function Menu() {
   const { branchId, orderId } = useParams();
   const [cartCount, setCartCount] = useState(0);
   const [activeCategory, setActiveCategory] = useState(null);
-  const [allMenuItems, setAllMenuItems] = useState([]); // menu gốc
-  const [menuItems, setMenuItems] = useState([]); // menu đang hiển thị
+  const [allMenuItems, setAllMenuItems] = useState([]); // menu old
+  const [menuItems, setMenuItems] = useState([]); // menu showing
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -19,6 +19,12 @@ export default function Menu() {
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState({});
+
+  useEffect(() => {
+    if (branchId) {
+      localStorage.setItem("currentBranchId", branchId);
+    }
+  }, [branchId]);
 
   useEffect(() => {
     const fetchCategory = async () => {

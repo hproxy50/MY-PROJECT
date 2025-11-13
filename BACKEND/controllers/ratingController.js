@@ -60,13 +60,15 @@ export const getRatingsByBranch = async (req, res) => {
   try {
     const { branch_id } = req.params;
 
-    const [ratings] = await db.query(
-      `SELECT rating_id, rating, comment, customer_name, order_date, created_at
-       FROM ratings
-       WHERE branch_id = ?
-       ORDER BY created_at DESC`,
+    const [branchResult] = await db.query(
+      `SELECT name FROM branches WHERE branch_id = ?`,
       [branch_id]
     );
+
+    if (!branchResult.length) {
+      return res.status(404).json({ message: "Branch not found" });
+    }
+    const branchName = branchResult[0].name;
 
     const [avgResult] = await db.query(
       `SELECT ROUND(AVG(rating), 1) AS avg_rating, COUNT(*) AS total
@@ -77,7 +79,31 @@ export const getRatingsByBranch = async (req, res) => {
 
     const summary = avgResult[0] || { avg_rating: 0, total: 0 };
 
-    res.json({ summary, ratings });
+    const [ratings] = await db.query(
+      `SELECT rating_id, order_id, rating, comment, customer_name, order_date, created_at
+       FROM ratings
+       WHERE branch_id = ?
+       ORDER BY created_at DESC`,
+      [branch_id]
+    );
+
+
+    for (const rating of ratings) {
+      const [items] = await db.query(
+        `SELECT oi.quantity, mi.name, mi.image 
+         FROM order_items oi
+         JOIN menu_items mi ON oi.item_id = mi.item_id
+         WHERE oi.order_id = ?`,
+        [rating.order_id]
+      );
+
+      rating.products = items.map((item) => ({
+        name: item.name,
+        img: item.image,
+      }));
+    }
+
+    res.json({ branchName, summary, ratings });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -113,8 +139,7 @@ export const updateRating = async (req, res) => {
     const { rating, comment } = req.body;
     const user_id = req.user.user_id;
 
-    if (!rating)
-      return res.status(400).json({ message: "Missing rating" });
+    if (!rating) return res.status(400).json({ message: "Missing rating" });
 
     if (rating < 1 || rating > 5)
       return res.status(400).json({ message: "Rating must be 1–5" });
@@ -135,7 +160,6 @@ export const updateRating = async (req, res) => {
     );
 
     res.json({ message: "Rating updated successfully" });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });

@@ -78,6 +78,32 @@
         }
     }
 
+    .History-top3 {
+        margin-top: 20px;
+        text-align: end;
+        margin-right: 50px;
+
+        button {
+            border: none;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer; 
+            transition: background-color 0.2s, color 0.2s; 
+
+            &:hover {
+                background-color: rgb(255, 123, 0);
+                color: white;
+            }
+
+            &.all-branches-active {
+                background-color: rgb(255, 123, 0);
+                color: white; 
+            }
+        }
+    }
+
     .History-mid {
         margin-left: 50px;
         margin-right: 50px;

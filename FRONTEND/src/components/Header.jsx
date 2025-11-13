@@ -1,18 +1,27 @@
 // src/components/Header.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Search, Phone } from "lucide-react";
+import { ShoppingCart, Search, Phone, Star } from "lucide-react";
+import API from "../api/api";
 import "../css/Header.scss";
 import LogoImage from "../assets/image/pizza.png";
 
-const Header = ({ orderId, cartCount, allMenuItems = [], onSelectItem }) => {
+const Header = ({
+  orderId,
+  cartCount,
+  allMenuItems = [],
+  onSelectItem,
+  branchId,
+}) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef(null);
+  const [avgRating, setAvgRating] = useState(null);
+  const [totalRatings, setTotalRatings] = useState(0);
 
-  // Lọc danh sách món ăn
+  //filter
   useEffect(() => {
     if (query.trim() === "") {
       setSuggestions([]);
@@ -22,10 +31,10 @@ const Header = ({ orderId, cartCount, allMenuItems = [], onSelectItem }) => {
     const filtered = allMenuItems.filter((item) =>
       item.name.toLowerCase().includes(query.toLowerCase())
     );
-    setSuggestions(filtered.slice(0, 6)); // chỉ hiển thị tối đa 6 kết quả
+    setSuggestions(filtered.slice(0, 6)); //6 search
   }, [query, allMenuItems]);
 
-  // Ẩn dropdown khi click ra ngoài
+  //hide drop down
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -36,6 +45,25 @@ const Header = ({ orderId, cartCount, allMenuItems = [], onSelectItem }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (branchId) {
+      const fetchAvgRating = async () => {
+        try {
+          const res = await API.get(`/ratings/branch/${branchId}`);
+          if (res.data && res.data.summary) {
+            setAvgRating(res.data.summary.avg_rating);
+            setTotalRatings(res.data.summary.total);
+          }
+        } catch (err) {
+          console.error("Failed to fetch avg rating:", err);
+          setAvgRating(0);
+        }
+      };
+
+      fetchAvgRating();
+    }
+  }, [branchId]);
+
   return (
     <header className="header">
       <div className="header-Top">
@@ -44,12 +72,16 @@ const Header = ({ orderId, cartCount, allMenuItems = [], onSelectItem }) => {
             src={LogoImage}
             alt="Logo"
             className="header-logo"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              if (branchId && orderId) {
+                navigate(`/branches`);
+              } else {
+                navigate(-1);
+              }
+            }}
           />
           <p>Pizza Restaurant</p>
         </div>
-
-        {/* Search box */}
         <div className="header-Top-Middle" ref={searchRef}>
           <input
             type="text"
@@ -62,7 +94,12 @@ const Header = ({ orderId, cartCount, allMenuItems = [], onSelectItem }) => {
             }}
           />
           <button className="searchButton">
-            <Search className="searchIcon" alt="search" color="black" size={20} />
+            <Search
+              className="searchIcon"
+              alt="search"
+              color="black"
+              size={20}
+            />
           </button>
           {showDropdown && suggestions.length > 0 && (
             <ul className="search-dropdown">
@@ -86,8 +123,6 @@ const Header = ({ orderId, cartCount, allMenuItems = [], onSelectItem }) => {
             </ul>
           )}
         </div>
-
-        {/* Cart */}
         <div className="header-Top-Right">
           <p>Service</p>
           <button
@@ -104,18 +139,38 @@ const Header = ({ orderId, cartCount, allMenuItems = [], onSelectItem }) => {
           </button>
         </div>
       </div>
-
       <div className="header-Bottom">
         <div className="header-Bottom-Left">
           <ul>
             <li>About us</li>
             <li>Menu</li>
             <li onClick={() => navigate("/history")}>Order status</li>
+            <li
+              className={branchId ? "clickable" : ""}
+              onClick={() => {
+                if (branchId) {
+                  navigate(`/rating/branch/${branchId}`);
+                }
+              }}
+              title={branchId ? `${totalRatings} Ratings` : "Ratings"}
+            >
+              Rating:
+              {avgRating !== null ? (
+                <>
+                  <strong style={{ color: "#fadb14", margin: "0 4px" }}>
+                    {avgRating}
+                  </strong>
+                  <Star size={16} fill="#fadb14" color="#fadb14" />
+                </>
+              ) : (
+                "..."
+              )}
+            </li>
           </ul>
         </div>
         <div className="header-Bottom-Right">
           <Phone className="PhoneIcon" alt="Phone" color="black" size={20} />
-          <p>1234567890</p>
+          <p>0584299322</p>
         </div>
       </div>
     </header>

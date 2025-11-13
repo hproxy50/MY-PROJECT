@@ -6,7 +6,7 @@ import Header from "../../components/headerStatus";
 
 export default function History() {
   const [orders, setOrders] = useState([]);
-  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState("IN_PROGRESS");
   const [searchText, setSearchText] = useState("");
   const [showRatingModal, setshowRatingModal] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState(null);
@@ -17,17 +17,23 @@ export default function History() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  const [showAllBranches, setShowAllBranches] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await API.get("/history");
+        const currentBranchId = localStorage.getItem("currentBranchId");
+        let url = "/history";
+        if (!showAllBranches && currentBranchId) {
+          url = `/history?branch_id=${currentBranchId}`;
+        }
+        const res = await API.get(url);
         let ordersData = res.data.orders || [];
         const updatedOrders = await Promise.all(
           ordersData.map(async (order) => {
             try {
-              const check = await API.get(`/rating/check/${order.order_id}`);
+              const check = await API.get(`/ratings/check/${order.order_id}`);
               return {
                 ...order,
                 isRated: check.data.rated,
@@ -43,7 +49,7 @@ export default function History() {
       }
     };
     fetchOrders();
-  }, []);
+  }, [showAllBranches]);
 
   const openDetailModal = (order) => {
     setSelectedOrder(order);
@@ -75,7 +81,7 @@ export default function History() {
   const openRatingModal = async (orderId) => {
     setCurrentOrderId(orderId);
     try {
-      const res = await API.get(`/rating/check/${orderId}`);
+      const res = await API.get(`/ratings/check/${orderId}`);
       if (res.data.rated) {
         setRating(res.data.rating);
         setComment(res.data.comment || "");
@@ -95,10 +101,10 @@ export default function History() {
     if (!rating) return alert("Please select a rating from 1–5 stars");
     try {
       if (isEditing) {
-        await API.put(`/rating/${currentOrderId}`, { rating, comment });
+        await API.put(`/ratings/${currentOrderId}`, { rating, comment });
         alert("Rating updated successfully!");
       } else {
-        await API.post("/rating", {
+        await API.post("/ratings", {
           order_id: currentOrderId,
           rating,
           comment,
@@ -126,6 +132,10 @@ export default function History() {
       console.error("Buy again error:", err);
       alert(err.response?.data?.message || "Cannot add to cart");
     }
+  };
+
+  const handleToggleBranchView = () => {
+    setShowAllBranches((prev) => !prev);
   };
 
   const filteredOrders = orders
@@ -167,10 +177,7 @@ export default function History() {
 
   return (
     <>
-      <Header
-        orderId={currentOrderId}
-        branchId={selectedOrder?.branch_id}
-      />
+      <Header orderId={currentOrderId} branchId={selectedOrder?.branch_id} />
       <div className="HistoryBody">
         <div className="History-top">
           <div className="History-top-sort">
@@ -197,7 +204,7 @@ export default function History() {
                 onClick={() => setFilterStatus("CANCELED")}
                 className={filterStatus === "CANCELED" ? "active" : ""}
               >
-                <div className="History-top-sort-cancel">CANCELED</div>
+                <div className="History-top-sort-cancel">Canceled</div>
               </li>
             </ul>
           </div>
@@ -212,6 +219,17 @@ export default function History() {
               onChange={(e) => setSearchText(e.target.value)}
             />
           </div>
+        </div>
+
+        <div className="History-top3">
+          <button
+            onClick={handleToggleBranchView}
+            className={showAllBranches ? "all-branches-active" : ""}
+          >
+            {showAllBranches
+              ? "Showing All Branches"
+              : "Take all branch orders"}
+          </button>
         </div>
 
         <div className="History-mid">
@@ -390,16 +408,21 @@ export default function History() {
                   <p>
                     <strong>Phone:</strong> {selectedOrder.customer_phone}
                   </p>
-                  <p>
-                    <strong>Address:</strong>{" "}
-                    {selectedOrder.delivery_address || "N/A"}
-                  </p>
+                  {selectedOrder.order_type === "DELIVERY" && (
+                    <p>
+                      <strong>Address:</strong>{" "}
+                      {selectedOrder.delivery_address || "N/A"}
+                    </p>
+                  )}
                   <p>
                     <strong>Scheduled time:</strong>{" "}
                     {selectedOrder.scheduled_time || "N/A"}
                   </p>
                   <p>
                     <strong>Branch:</strong> {selectedOrder.branch_name}
+                  </p>
+                  <p>
+                    <strong>Message:</strong> {selectedOrder.message}
                   </p>
                   <hr />
                   <p>

@@ -3,6 +3,14 @@ import db from "../config/db.js";
 export const getOrderHistory = async (req, res) => {
   try {
     const userId = req.user.user_id;
+    const { branch_id } = req.query;
+    let queryParams = [userId];
+    let branchCondition = "";
+
+    if (branch_id) {
+      branchCondition = " AND o.branch_id = ? ";
+      queryParams.push(branch_id);
+    }
     const [orders] = await db.query(
       `SELECT 
           o.order_id,
@@ -17,23 +25,21 @@ export const getOrderHistory = async (req, res) => {
           o.customer_phone,
           o.delivery_address,
           o.scheduled_time,
+          o.message,
           b.name AS branch_name
         FROM orders o
         JOIN branches b ON o.branch_id = b.branch_id
         WHERE o.user_id = ?
           AND o.status NOT IN ('DRAFT')
+          ${branchCondition}
         ORDER BY o.created_at DESC`,
-      [userId]
+        queryParams
     );
 
     if (orders.length === 0) {
       return res.json({ message: "No order now", orders: [] });
     }
-
-    // Lấy danh sách order_id để truy vấn item nhanh hơn
     const orderIds = orders.map((o) => o.order_id);
-
-    // Lấy tất cả item của các đơn này
     const [items] = await db.query(
       `SELECT 
           oi.order_id,
@@ -49,8 +55,6 @@ export const getOrderHistory = async (req, res) => {
         WHERE oi.order_id IN (?)`,
       [orderIds]
     );
-
-    // Gom item theo từng đơn hàng
     const orderMap = {};
     orders.forEach((order) => {
       orderMap[order.order_id] = { ...order, items: [] };
@@ -61,8 +65,6 @@ export const getOrderHistory = async (req, res) => {
         orderMap[item.order_id].items.push(item);
       }
     });
-
-    // Trả về danh sách đơn
     return res.json({
       orders: Object.values(orderMap),
     });

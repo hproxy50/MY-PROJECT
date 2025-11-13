@@ -62,7 +62,7 @@ app.use("/shipper", shipperOrderRoutes);
 
 app.use("/history", cusHistoryRoutes);
 
-app.use("/rating", ratingRoutes);
+app.use("/ratings", ratingRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

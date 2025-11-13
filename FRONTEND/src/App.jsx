@@ -14,6 +14,7 @@ import Cart from "./pages/CUSTOMER/Cart";
 import Checkout from "./pages/CUSTOMER/Checkout";
 import History from "./pages/CUSTOMER/History";
 import PaymentResult from "./pages/CUSTOMER/PaymentResult"
+import Rating from "./pages/CUSTOMER/Rating";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
       <Route path="/menu/:branchId/:orderId" element={<Menu />} />
       <Route path="/cart/:orderId" element={<Cart />} />
       <Route path="/checkout/:orderId" element={<Checkout />} />
+      <Route path="/rating/branch/:branch_id" element={<Rating />} />
 
       {/* STAFF */}
       <Route
