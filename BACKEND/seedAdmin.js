@@ -10,7 +10,7 @@ async function createAdmin() {
   try {
     const email = "admin@restaurant.com";
     const name = "Super Admin";
-    const password = "Admin@123"; // sau khi chạy hãy đổi mật khẩu
+    const password = "Admin@123"; 
     const phone = null;
 
     const [exists] = await pool.execute("SELECT user_id FROM users WHERE email = ?", [email]);

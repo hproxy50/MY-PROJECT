@@ -76,7 +76,6 @@ export const createPromotion = async (req, res) => {
     if (discount_type === "AMOUNT" && discount_value <= 0) {
       return res.status(400).json({ message: "Giá trị giảm phải lớn hơn 0" });
     }
-d
     if (!start_date || !end_date) {
       return res.status(400).json({ message: "Ngày bắt đầu và kết thúc không được để trống" });
     }

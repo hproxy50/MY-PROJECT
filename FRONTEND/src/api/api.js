@@ -2,10 +2,10 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:3000", // backend của bạn
+  baseURL: "http://localhost:3000",
 });
 
-// Gắn token vào header Authorization
+
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {

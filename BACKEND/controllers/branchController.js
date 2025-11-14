@@ -72,7 +72,6 @@ export const updateBranch = async (req, res) => {
     const { id } = req.params;
     let { name, address, phone, status } = req.body;
 
-    // Lấy thông tin chi nhánh cũ
     const [rows] = await db.query(
       "SELECT * FROM branches WHERE branch_id = ?",
       [id]
@@ -82,13 +81,11 @@ export const updateBranch = async (req, res) => {
     }
     const oldData = rows[0];
 
-    // Trim chuỗi đầu vào
     if (typeof name === "string") name = name.trim();
     if (typeof address === "string") address = address.trim();
     if (typeof phone === "string") phone = phone.trim();
     if (typeof status === "string") status = status.trim().toUpperCase();
 
-    // Kiểm tra chuỗi rỗng hoặc khoảng trắng
     for (let [key, value] of Object.entries({ name, address, phone, status })) {
       if (
         value !== undefined &&
@@ -101,14 +98,12 @@ export const updateBranch = async (req, res) => {
       }
     }
 
-    // Kiểm tra định dạng số điện thoại (chỉ chứa 9–11 chữ số)
     if (phone && !/^\d{9,11}$/.test(phone)) {
       return res.status(400).json({
         message: "Số điện thoại không hợp lệ. Chỉ được chứa 9-11 chữ số.",
       });
     }
 
-    // Kiểm tra status hợp lệ
     if (status && !["ACTIVE", "INACTIVE"].includes(status)) {
       return res.status(400).json({
         message:
@@ -116,13 +111,11 @@ export const updateBranch = async (req, res) => {
       });
     }
 
-    // Dùng thông tin cũ nếu không có giá trị mới
     name = name || oldData.name;
     address = address || oldData.address;
     phone = phone || oldData.phone;
     status = status || oldData.status;
 
-    // Kiểm tra nếu không có gì thay đổi
     const noChange =
       name === oldData.name &&
       address === oldData.address &&
@@ -135,7 +128,6 @@ export const updateBranch = async (req, res) => {
         .json({ message: "Không có thông tin nào được thay đổi." });
     }
 
-    // Cập nhật DB
     await db.query(
       "UPDATE branches SET name = ?, address = ?, phone = ?, status = ? WHERE branch_id = ?",
       [name, address, phone, status, id]
@@ -151,15 +143,25 @@ export const updateBranch = async (req, res) => {
 export const deleteBranch = async (req, res) => {
   try {
     const { id } = req.params;
-    const [rows] = await db.query("SELECT * FROM branches WHERE branche_id = ?", [
-      id,
-    ]);
+    const [rows] = await db.query(
+      "SELECT * FROM branches WHERE branch_id = ?",
+      [id]
+    );
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy chi nhanh" });
+      return res.status(404).json({ message: "Không tìm thấy chi nhánh" });
 
-    await db.query("DELETE FROM branches WHERE branche_id = ?", [id]);
-    return res.json({ message: "Xóa chi nhanh thành công" });
+    await db.query("DELETE FROM branches WHERE branch_id = ?", [id]);
+    return res.json({ message: "Xóa chi nhánh thành công" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    console.error("LỖI KHI XÓA CHI NHÁNH:", error);
+    let errorMessage = "Lỗi server";
+    if (error.code === "ER_ROW_IS_REFERENCED_2" || error.errno === 1451) {
+      errorMessage =
+        "Không thể xóa chi nhánh này. Đang có dữ liệu (như đơn hàng, nhân viên, nhập hàng,...) liên kết với nó.";
+      return res.status(400).json({ message: errorMessage });
+    }
+    return res
+      .status(500)
+      .json({ message: errorMessage, error: error.message });
   }
 };

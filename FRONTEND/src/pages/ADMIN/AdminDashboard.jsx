@@ -1,258 +1,126 @@
-//page/STAFF/MenuCRUD.jsx
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-//import { Modal, Button, Form } from "react-bootstrap";
-import API from "../../api/api";
-import "bootstrap/dist/css/bootstrap.min.css";
+import React, { useState } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Navbar,
+  Nav,
+  Card,
+  Table,
+  Button,
+  Offcanvas,
+} from "react-bootstrap";
+import { Routes, Route, Link } from "react-router-dom";
+import AdminStaffCRUD from './AdminStaffCRUD'
+import AdminBranches from "./AdminBranches";
+import AdminPromtion from "./AdminPromotion"
 
-export default function MenuCRUD() {
-  const [menuItems, setMenuItems] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    price: "",
-    description: "",
-    image: "",
-    stock_quantity: "",
-    category_id: "",
-  });
+function SidebarContent({ onLinkClick }) {
+  return (
+    <Nav className="flex-column">
+      <Nav.Link
+        as={Link}
+        to="#"
+        className="text-white"
+        onClick={onLinkClick}
+      >
+        Dashboard
+      </Nav.Link>
+      <Nav.Link
+        as={Link}
+        to="/admin/staffCRUD"
+        className="text-white"
+        onClick={onLinkClick}
+      >
+        Account manager
+      </Nav.Link>
+      <Nav.Link
+        as={Link}
+        to="/admin/adminBranches"
+        className="text-white"
+        onClick={onLinkClick}
+      >
+        Branches
+      </Nav.Link>
+      <Nav.Link
+        as={Link}
+        to="/admin/adminPromotion"
+        className="text-white"
+        onClick={onLinkClick}
+      >
+        Promotion
+      </Nav.Link>
+    </Nav>
+  );
+}
 
-  // Lấy danh sách món ăn
-  const fetchMenu = async () => {
-    try {
-      const res = await axios.get(API_URL, { withCredentials: true });
-      setMenuItems(res.data);
-    } catch (err) {
-      console.error("Lỗi lấy menu:", err);
-    }
-  };
+function Header({ onToggleSidebar }) {
+  return (
+    <Navbar bg="light" expand="lg" className="shadow-sm sticky-top">
+      <Container fluid>
+        <Button
+          variant="outline-secondary"
+          onClick={onToggleSidebar}
+          className="d-lg-none me-2"
+        >
+          <i className="bi bi-list"></i>
+          Menu
+        </Button>
+        <Navbar.Brand href="#">Admin Dashboard</Navbar.Brand>
+        <Navbar.Toggle aria-controls="navbarScroll" />
+        <Navbar.Collapse id="navbarScroll" className="justify-content-end">
+          <Nav>
+            <Nav.Link href="#">Logout</Nav.Link>
+          </Nav>
+        </Navbar.Collapse>
+      </Container>
+    </Navbar>
+  );
+}
 
-  useEffect(() => {
-    fetchMenu();
-  }, []);
 
-  // Mở modal thêm hoặc sửa
-  const handleShowModal = (item = null) => {
-    if (item) {
-      setEditingItem(item);
-      setFormData({
-        name: item.name,
-        price: item.price,
-        description: item.description,
-        image: item.image,
-        stock_quantity: item.stock_quantity ?? "",
-        category_id: item.category_id,
-      });
-    } else {
-      setEditingItem(null);
-      setFormData({
-        name: "",
-        price: "",
-        description: "",
-        image: "",
-        stock_quantity: "",
-        category_id: "",
-      });
-    }
-    setShowModal(true);
-  };
 
-  // Đóng modal
-  const handleCloseModal = () => setShowModal(false);
-
-  // Xử lý input
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // Thêm hoặc cập nhật
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingItem) {
-        await axios.put(`${API_URL}/update/${editingItem.item_id}`, formData, {
-          withCredentials: true,
-        });
-        alert("Cập nhật món ăn thành công!");
-      } else {
-        await axios.post(`${API_URL}/create`, formData, {
-          withCredentials: true,
-        });
-        alert("Thêm món ăn thành công!");
-      }
-      handleCloseModal();
-      fetchMenu();
-    } catch (err) {
-      console.error("Lỗi thêm/cập nhật:", err);
-      alert(err.response?.data?.message || "Có lỗi xảy ra");
-    }
-  };
-
-  // Xóa món ăn
-  const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa món ăn này?")) {
-      try {
-        await axios.delete(`${API_URL}/delete/${id}`, {
-          withCredentials: true,
-        });
-        alert("Xóa thành công!");
-        fetchMenu();
-      } catch (err) {
-        console.error("Lỗi xóa:", err);
-      }
-    }
-  };
+export default function StaffDashboard() {
+  const [showSidebar, setShowSidebar] = useState(false);
+  const handleSidebarClose = () => setShowSidebar(false);
+  const handleSidebarToggle = () => setShowSidebar((prev) => !prev);
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-3">Quản lý Menu</h2>
-      <Button variant="primary" onClick={() => handleShowModal()}>
-        + Thêm món ăn
-      </Button>
-
-      <table className="table table-striped mt-3">
-        <thead className="table-dark">
-          <tr>
-            <th>Ảnh</th>
-            <th>Tên món</th>
-            <th>Mô tả</th>
-            <th>Giá</th>
-            <th>Số lượng</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {menuItems.map((item) => (
-            <tr key={item.item_id}>
-              <td>
-                {item.image ? (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    style={{ width: "70px", height: "70px", objectFit: "cover" }}
-                  />
-                ) : (
-                  "Không có ảnh"
-                )}
-              </td>
-              <td>{item.name}</td>
-              <td>{item.description}</td>
-              <td>{item.price} đ</td>
-              <td>{item.stock_quantity ?? "-"}</td>
-              <td>{item.is_available ? "Còn hàng" : "Hết hàng"}</td>
-              <td>
-                <Button
-                  size="sm"
-                  variant="warning"
-                  onClick={() => handleShowModal(item)}
-                  className="me-2"
-                >
-                  Sửa
-                </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => handleDelete(item.item_id)}
-                >
-                  Xóa
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Modal thêm/sửa */}
-      <Modal show={showModal} onHide={handleCloseModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingItem ? "Sửa món ăn" : "Thêm món ăn"}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-2">
-              <Form.Label>Tên món</Form.Label>
-              <Form.Control
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-2">
-              <Form.Label>Giá</Form.Label>
-              <Form.Control
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-2">
-              <Form.Label>Mô tả</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-2">
-              <Form.Label>Số lượng</Form.Label>
-              <Form.Control
-                type="number"
-                name="stock_quantity"
-                value={formData.stock_quantity}
-                onChange={handleChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-2">
-              <Form.Label>Category ID</Form.Label>
-              <Form.Control
-                type="number"
-                name="category_id"
-                value={formData.category_id}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-2">
-              <Form.Label>Ảnh (URL)</Form.Label>
-              <Form.Control
-                type="text"
-                name="image"
-                value={formData.image}
-                onChange={handleChange}
-              />
-              {formData.image && (
-                <img
-                  src={formData.image}
-                  alt="Preview"
-                  className="mt-2"
-                  style={{ width: "100%", maxHeight: "200px", objectFit: "cover" }}
-                />
-              )}
-            </Form.Group>
-
-            <div className="text-end">
-              <Button variant="secondary" onClick={handleCloseModal} className="me-2">
-                Hủy
-              </Button>
-              <Button type="submit" variant="success">
-                {editingItem ? "Cập nhật" : "Thêm"}
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
+    <div>
+      {/* Truyền hàm toggle vào Header */}
+      <Header onToggleSidebar={handleSidebarToggle} />
+      <Container fluid>
+        <Row>
+          <Col
+            lg={2}
+            className="bg-dark text-white vh-100 position-fixed d-none d-lg-flex flex-column p-3"
+            style={{ width: "220px" }}
+          >
+            <h4 className="text-center mb-4">Admin Panel</h4>
+            <SidebarContent onLinkClick={null} />
+          </Col>
+          <Offcanvas
+            show={showSidebar}
+            onHide={handleSidebarClose}
+            className="bg-dark text-white d-lg-none"
+            responsive="lg"
+          >
+            <Offcanvas.Header closeButton closeVariant="white">
+              <Offcanvas.Title>Admin Panel</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+              <SidebarContent onLinkClick={handleSidebarClose} />
+            </Offcanvas.Body>
+          </Offcanvas>
+          <Col xs={12} lg={{ span: 10, offset: 2 }} className="p-4">
+            <Routes>
+              <Route path="staffCRUD" element={<AdminStaffCRUD />} />
+              <Route path="adminBranches" element={<AdminBranches/>} />
+              <Route path="adminPromotion" element={<AdminPromtion/>} />
+            </Routes>
+          </Col>
+        </Row>
+      </Container>
     </div>
   );
-};
+}
