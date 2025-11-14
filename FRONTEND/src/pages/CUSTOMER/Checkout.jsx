@@ -68,6 +68,13 @@ export default function Checkout() {
 
   const handleConfirm = async () => {
     if (
+      deliveryMethod === "pickup" &&
+      (!form.scheduled_time || !form.scheduled_time.trim())
+    ) {
+      alert("Please select the time you will come");
+      return;
+    }
+    if (
       deliveryMethod === "delivery" &&
       (!form.ward.trim() || !form.street.trim())
     ) {
@@ -90,17 +97,33 @@ export default function Checkout() {
       await API.post(`/orders/${orderId}/confirm`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      await API.post(
+
+      // --- SỬA LỖI 2: Gán kết quả API cho biến 'response' ---
+      const response = await API.post(
         "/cart",
         { branch_id: checkoutData.branch.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      navigate("/history");
+      // ----------------------------------------------------
+
+      const newOrderId = response.data?.order_id; // Bây giờ 'response' đã tồn tại
+      const currentBranchId = checkoutData.branch.id;
+
+      if (newOrderId && currentBranchId) {
+        console.log(
+          `Cash order confirmed. Redirecting to /menu/${currentBranchId}/${newOrderId}`
+        );
+        navigate(`/menu/${currentBranchId}/${newOrderId}`);
+      } else {
+        console.error("Failed to create new cart after CASH confirm.");
+        navigate("/");
+      }
     } catch (err) {
+      // Bây giờ alert sẽ hiển thị đúng thông báo từ backend (Vd: "Vui lòng chọn giờ cho TAKEAWAY")
       alert(err.response?.data?.message || "err order");
     }
   };
-
+  
   const handleConfirmQR = async () => {
     // --- Validate chung cho PICKUP ---
     if (deliveryMethod === "pickup") {
@@ -172,7 +195,7 @@ export default function Checkout() {
   //   const hour = selectedDate.getHours();
 
   //   if (hour < 8 || hour >= 22) {
-  //     alert("Vui lòng chọn giờ giao hàng từ 08:00 đến 22:00.");
+  //     alert("Please select delivery time from 08:00 to 22:00.");
   //     e.target.value = "";
   //   }
   // }
@@ -299,16 +322,67 @@ export default function Checkout() {
                       </div>
                     </div>
                     <div className="checkout-page-card-bottom-left-down-info-input3">
-                      <div className="Select-time">
-                        <label>Select time you will came</label>
-                        <input
-                          type="datetime-local"
-                          name="scheduled_time"
-                          className="form-control"
-                          min={minDateTime}
-                          value={form.scheduled_time}
-                          onChange={handleChange}
-                        />
+                      <div className="checkout-page-card-bottom-left-down-info-timeDelivery">
+                        <label>Please select the desired time to receive</label>
+                        <p>
+                          Today, "
+                          {new Date().toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "long",
+                          })}
+                          ", at
+                        </p>
+                        <div className="input-group">
+                          <input
+                            type="time"
+                            name="scheduled_time"
+                            className="form-control"
+                            min="08:00"
+                            max="22:00"
+                            value={
+                              form.scheduled_time
+                                ? new Date(
+                                    form.scheduled_time
+                                  ).toLocaleTimeString("en-GB", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const selectedTime = e.target.value;
+                              const now = new Date();
+                              const [hour, minute] = selectedTime
+                                .split(":")
+                                .map(Number);
+                              const selectedDate = new Date(); // hôm nay
+                              selectedDate.setHours(hour, minute, 0, 0);
+
+                              // if (selectedDate < now) {
+                              //   alert("Please select a time in the future");
+                              //   return;
+                              // }
+
+                              // format về "YYYY-MM-DD HH:mm:00"
+                              const year = selectedDate.getFullYear();
+                              const month = String(
+                                selectedDate.getMonth() + 1
+                              ).padStart(2, "0");
+                              const day = String(
+                                selectedDate.getDate()
+                              ).padStart(2, "0");
+                              const h = String(hour).padStart(2, "0");
+                              const m = String(minute).padStart(2, "0");
+                              const formatted = `${year}-${month}-${day}T${h}:${m}:00`;
+                              handleChange({
+                                target: {
+                                  name: "scheduled_time",
+                                  value: formatted,
+                                },
+                              });
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -435,12 +509,12 @@ export default function Checkout() {
                               : ""
                           }
                           onChange={(e) => {
-                            const selectedTime = e.target.value; // "HH:mm"
+                            const selectedTime = e.target.value;
                             const now = new Date();
                             const [hour, minute] = selectedTime
                               .split(":")
                               .map(Number);
-                            const selectedDate = new Date(); // hôm nay
+                            const selectedDate = new Date();
                             selectedDate.setHours(hour, minute, 0, 0);
 
                             // if (selectedDate < now) {
@@ -448,7 +522,6 @@ export default function Checkout() {
                             //   return;
                             // }
 
-                            // format về "YYYY-MM-DD HH:mm:00"
                             const year = selectedDate.getFullYear();
                             const month = String(
                               selectedDate.getMonth() + 1

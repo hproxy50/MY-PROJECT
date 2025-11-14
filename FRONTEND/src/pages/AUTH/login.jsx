@@ -26,6 +26,10 @@ export default function Login() {
         navigate("/admin/dashboard");
       } else if (role === "CUSTOMER") {
         navigate("/branches");
+      } else if (role === "CHEF") {
+        navigate("/chef");
+      } else if (role === "SHIPPER") {
+        navigate("/shipper");
       } else {
         setError("Không xác định được vai trò người dùng");
       }

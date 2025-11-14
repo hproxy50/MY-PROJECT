@@ -142,8 +142,17 @@ const Header = ({
       <div className="header-Bottom">
         <div className="header-Bottom-Left">
           <ul>
-            <li>Log out</li>
-            <li>About us</li>
+            <li
+              onClick={() => {
+                const confirmed = window.confirm("Are you sure to log out?");
+                if (confirmed) {
+                  localStorage.removeItem("token");
+                  navigate("/");
+                }
+              }}
+            >
+              Log out
+            </li>
             <li>Menu</li>
             <li onClick={() => navigate("/history")}>Order status</li>
             <li

@@ -17,11 +17,10 @@ const Header = ({ orderId, cartCount, branchId }) => {
             alt="Logo"
             className="header-logo"
             onClick={() => {
-              // Quay về menu; cần branchId và orderId nếu route yêu cầu
               if (branchId && orderId) {
                 navigate(`/menu/${branchId}/${orderId}`);
               } else {
-                navigate("/branches"); // fallback nếu chưa có branch/order
+                navigate("/branches");
               }
             }}
           />
@@ -48,8 +47,7 @@ const Header = ({ orderId, cartCount, branchId }) => {
       <div className="header-Bottom">
         <div className="header-Bottom-Left">
           <ul>
-            <li>Log out</li>
-            <li onClick={() => navigate("/about")}>About us</li>
+            <li onClick={() => navigate("/")}>Log out</li>
             <li
               onClick={() => {
                 if (branchId && orderId) {

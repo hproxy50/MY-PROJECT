@@ -80,7 +80,7 @@ export const confirmOrder = async (req, res) => {
     if (order_type === "TAKEAWAY" && !scheduled_time) {
       return res
         .status(400)
-        .json({ message: "Vui lòng chọn giờ cho DINE_IN hoặc TAKEAWAY" });
+        .json({ message: "Vui lòng chọn giờ cho TAKEAWAY" });
     }
     if (order_type === "DELIVERY" && !delivery_address) {
       return res

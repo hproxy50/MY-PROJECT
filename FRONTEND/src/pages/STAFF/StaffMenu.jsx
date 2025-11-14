@@ -490,10 +490,7 @@ export default function StaffMenu() {
                     onChange={(e) =>
                       setFormData({ ...formData, is_available: e.target.value })
                     }
-                    disabled={
-                      Number(formData.stock_quantity) <= 0 ||
-                      formData.stock_quantity === ""
-                    }
+                    disabled
                   >
                     <option value={1}>Còn hàng</option>
                     <option value={0}>Hết hàng</option>

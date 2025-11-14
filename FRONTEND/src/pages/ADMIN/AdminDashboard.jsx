@@ -87,7 +87,6 @@ export default function StaffDashboard() {
 
   return (
     <div>
-      {/* Truyền hàm toggle vào Header */}
       <Header onToggleSidebar={handleSidebarToggle} />
       <Container fluid>
         <Row>

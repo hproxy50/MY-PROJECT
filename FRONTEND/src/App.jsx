@@ -10,8 +10,10 @@ import Menu from "./pages/CUSTOMER/Menu";
 import Cart from "./pages/CUSTOMER/Cart";
 import Checkout from "./pages/CUSTOMER/Checkout";
 import History from "./pages/CUSTOMER/History";
-import PaymentResult from "./pages/CUSTOMER/PaymentResult"
+import PaymentResult from "./pages/CUSTOMER/PaymentResult";
 import Rating from "./pages/CUSTOMER/Rating";
+import Chef from "./pages/CHEF/Chef.jsx";
+import Shipper from "./pages/SHIPPER/Shipper.jsx"
 
 function App() {
   return (
@@ -31,7 +33,7 @@ function App() {
       <Route path="/cart/:orderId" element={<Cart />} />
       <Route path="/checkout/:orderId" element={<Checkout />} />
       <Route path="/rating/branch/:branch_id" element={<Rating />} />
-      
+
       <Route
         path="/staff/*"
         element={
@@ -41,7 +43,24 @@ function App() {
         }
       />
 
-      {/* ADMIN */}
+      <Route
+        path="/chef"
+        element={
+          <ProtectedRoute allowedRoles={["CHEF"]}>
+            <Chef />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/shipper"
+        element={
+          <ProtectedRoute allowedRoles={["SHIPPER"]}>
+            <Shipper />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/admin/*"
         element={
