@@ -2,7 +2,6 @@
 import db from "../config/db.js";
 import bcrypt from "bcrypt";
 
-// ================= LẤY DANH SÁCH USER =================
 export const getAllUsers = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -10,11 +9,10 @@ export const getAllUsers = async (req, res) => {
     );
     return res.json(rows);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= LẤY USER THEO ID =================
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -23,56 +21,48 @@ export const getUserById = async (req, res) => {
       [id]
     );
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy user" });
+      return res.status(404).json({ message: "cant find user" });
     return res.json(rows[0]);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= TẠO CUSTOMER MỚI =================
 export const createCustomer = async (req, res) => {
   try {
     let { name, email, password, phone } = req.body;
-
-    // Trim chuỗi nếu có
     if (typeof name === "string") name = name.trim();
     if (typeof email === "string") email = email.trim();
     if (typeof phone === "string") phone = phone.trim();
 
-    // Kiểm tra chuỗi rỗng hoặc khoảng trắng
     for (let [key, value] of Object.entries({ name, email, password, phone })) {
       if (
         value === undefined ||
         (typeof value === "string" && value.trim() === "")
       ) {
         return res.status(400).json({
-          message: `Trường '${key}' không được để trống hoặc chỉ chứa khoảng trắng`,
+          message: ` '${key}' cannot be blank or contain only spaces`,
         });
       }
     }
 
-    // Kiểm tra định dạng email
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ message: "Email không hợp lệ." });
+      return res.status(400).json({ message: "Invalid email." });
     }
 
-    // Kiểm tra email trùng
     const [exists] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
     if (exists.length > 0) {
-      return res.status(400).json({ message: "Email đã tồn tại" });
+      return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Kiểm tra phone hợp lệ
     if (!/^\d{9,11}$/.test(phone)) {
       return res.status(400).json({
-        message: "Số điện thoại không hợp lệ. Chỉ được chứa 9-11 chữ số.",
+        message: "Invalid phone number. Must contain 9-11 digits only.",
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await db.query(
@@ -80,25 +70,22 @@ export const createCustomer = async (req, res) => {
       [name, email, hashedPassword, phone]
     );
 
-    return res.status(201).json({ message: "Tạo customer thành công" });
+    return res.status(201).json({ message: "Create successful customers" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= TẠO STAFF MỚI =================
 export const createStaff = async (req, res) => {
   try {
     let { name, email, password, phone, branch_id, role } = req.body;
 
-    // Trim chuỗi nếu là string
     if (typeof name === "string") name = name.trim();
     if (typeof email === "string") email = email.trim();
     if (typeof phone === "string") phone = phone.trim();
     if (typeof role === "string") role = role.trim();
     if (typeof branch_id === "string") branch_id = branch_id.trim();
 
-    // Kiểm tra chuỗi rỗng hoặc toàn khoảng trắng
     for (let [key, value] of Object.entries({
       name,
       email,
@@ -112,32 +99,27 @@ export const createStaff = async (req, res) => {
         (typeof value === "string" && value.trim() === "")
       ) {
         return res.status(400).json({
-          message: `Trường '${key}' không được để trống hoặc chỉ chứa khoảng trắng`,
+          message: `'${key}' cannot be blank or contain only spaces`,
         });
       }
     }
 
-    // Kiểm tra định dạng email
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ message: "Email không hợp lệ." });
+      return res.status(400).json({ message: "Invalid email." });
     }
 
-    // Kiểm tra email trùng
     const [exists] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
     if (exists.length > 0) {
-      return res.status(400).json({ message: "Email đã tồn tại" });
+      return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Kiểm tra số điện thoại
     if (!/^\d{9,11}$/.test(phone)) {
       return res.status(400).json({
-        message: "Số điện thoại không hợp lệ. Chỉ được chứa 9-11 chữ số.",
+        message: "Invalid phone number. Must contain 9-11 digits only.",
       });
     }
-
-    // Kiểm tra chi nhánh
     const [branch] = await db.query(
       "SELECT * FROM branches WHERE branch_id = ?",
       [branch_id]
@@ -151,7 +133,6 @@ export const createStaff = async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
-    // Hash mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await db.query(
@@ -159,32 +140,28 @@ export const createStaff = async (req, res) => {
       [name, email, hashedPassword, phone, role, branch_id]
     );
 
-    return res.status(201).json({ message: `Tạo '${role}' thành công` });
+    return res.status(201).json({ message: `Create new '${role}' success` });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= CẬP NHẬT Customer =================
 export const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
     let { name, email, password, phone } = req.body;
 
-    // Lấy thông tin cũ
     const [rows] = await db.query("SELECT * FROM users WHERE user_id = ?", [
       id,
     ]);
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy user" });
+      return res.status(404).json({ message: "User not found" });
     const oldData = rows[0];
 
-    // Trim các chuỗi đầu vào (nếu là string)
     if (typeof name === "string") name = name.trim();
     if (typeof email === "string") email = email.trim();
     if (typeof phone === "string") phone = phone.trim();
 
-    // Kiểm tra chuỗi rỗng hoặc chỉ có khoảng trắng
     for (let [key, value] of Object.entries({ name, email, password, phone })) {
       if (
         value !== undefined &&
@@ -192,47 +169,41 @@ export const updateCustomer = async (req, res) => {
         value.trim() === ""
       ) {
         return res.status(400).json({
-          message: `Trường '${key}' không được để trống hoặc chỉ chứa khoảng trắng`,
+          message: ` '${key}' cannot be blank or contain only spaces`,
         });
       }
     }
 
-    //Right email
     if (email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
-        message: "Email không hợp lệ.",
+        message: "Invalid email.",
       });
     }
 
-    // Kiểm tra email trùng nếu có thay đổi
     if (email && email !== oldData.email) {
       const [exists] = await db.query("SELECT * FROM users WHERE email = ?", [
         email,
       ]);
       if (exists.length > 0) {
-        return res.status(400).json({ message: "Email đã tồn tại" });
+        return res.status(400).json({ message: "Email already exists" });
       }
     }
 
-    // Chỉ kiểm tra định dạng số nếu người dùng truyền phone
     if (phone !== undefined && !/^\d{9,11}$/.test(phone)) {
       return res.status(400).json({
-        message: "Số điện thoại không hợp lệ. Chỉ được chứa 9-11 chữ số.",
+        message: "Invalid phone number. Must contain 9-11 digits only.",
       });
     }
 
-    // Giữ lại giá trị cũ nếu không truyền
     name = name || oldData.name;
     email = email || oldData.email;
     phone = phone || oldData.phone;
 
-    // Xử lý mật khẩu
     let hashedPassword = oldData.password;
     if (password) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    //So sánh nếu không có gì thay đổi
     const noChange =
       name === oldData.name &&
       email === oldData.email &&
@@ -245,25 +216,22 @@ export const updateCustomer = async (req, res) => {
         .json({ message: "No info change" });
     }
 
-    // Cập nhật DB
     await db.query(
       "UPDATE users SET name=?, email=?, password=?, phone=? WHERE user_id=?",
       [name, email, hashedPassword, phone, id]
     );
 
-    return res.json({ message: "Cập nhật customer thành công" });
+    return res.json({ message: "Customer update successful" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= CẬP NHẬT Staff =================
 export const updateStaff = async (req, res) => {
   try {
     const { id } = req.params;
     let { name, email, password, phone, branch_id, role } = req.body;
 
-    // Kiểm tra user tồn tại
     const [rows] = await db.query("SELECT * FROM users WHERE user_id = ?", [
       id,
     ]);
@@ -272,14 +240,12 @@ export const updateStaff = async (req, res) => {
     }
     const oldData = rows[0];
 
-    // Trim các chuỗi đầu vào
     if (typeof name === "string") name = name.trim();
     if (typeof email === "string") email = email.trim();
     if (typeof phone === "string") phone = phone.trim();
     if (typeof role === "string")  role = role.trim();
     if (typeof branch_id === "string") branch_id = branch_id.trim();
 
-    // Kiểm tra chuỗi rỗng hoặc toàn khoảng trắng
     for (let [key, value] of Object.entries({ name, email, password, phone, role, branch_id })) {
       if (
         value !== undefined &&
@@ -287,32 +253,29 @@ export const updateStaff = async (req, res) => {
         value.trim() === ""
       ) {
         return res.status(400).json({
-          message: `Trường '${key}' không được để trống hoặc chỉ chứa khoảng trắng`,
+          message: `'${key}' cannot be blank or contain only spaces`,
         });
       }
     }
 
-    //Right email
     if (email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
-        message: "Email không hợp lệ.",
+        message: "Invalid email",
       });
     }
 
-    // Chỉ kiểm tra định dạng số nếu người dùng truyền phone
     if (phone !== undefined && !/^\d{9,11}$/.test(phone)) {
       return res.status(400).json({
-        message: "Số điện thoại không hợp lệ. Chỉ được chứa 9-11 chữ số.",
+        message: "Invalid phone number. Must contain 9-11 digits only",
       });
     }
 
-    // Kiểm tra email trùng nếu có thay đổi
     if (email && email !== oldData.email) {
       const [exists] = await db.query("SELECT * FROM users WHERE email = ?", [
         email,
       ]);
       if (exists.length > 0) {
-        return res.status(400).json({ message: "Email đã tồn tại" });
+        return res.status(400).json({ message: "Email already exists" });
       }
     }
 
@@ -322,18 +285,16 @@ export const updateStaff = async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
-    // Nếu có truyền branch_id → kiểm tra branch có tồn tại
     if (branch_id !== undefined && branch_id !== oldData.branch_id) {
       const [branch] = await db.query(
         "SELECT * FROM branches WHERE branch_id = ?",
         [branch_id]
       );
       if (branch.length === 0) {
-        return res.status(400).json({ message: "Chi nhánh không tồn tại" });
+        return res.status(400).json({ message: "Branch does not exist" });
       }
     }
 
-    // Dùng thông tin cũ nếu không truyền gì mới
     name = name || oldData.name;
     email = email || oldData.email;
     phone = phone || oldData.phone;
@@ -344,7 +305,6 @@ export const updateStaff = async (req, res) => {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // Kiểm tra nếu không có thay đổi gì
     const noChange =
       name === oldData.name &&
       email === oldData.email &&
@@ -355,22 +315,20 @@ export const updateStaff = async (req, res) => {
     if (noChange) {
       return res
         .status(400)
-        .json({ message: "Không có thông tin nào được thay đổi" });
+        .json({ message: "No information has been changed" });
     }
 
-    // Cập nhật
     await db.query(
       "UPDATE users SET name=?, email=?, password=?, phone=?, branch_id=? WHERE user_id=?",
       [name, email, hashedPassword, phone, branch_id, id]
     );
 
-    return res.json({ message: "Cập nhật staff thành công" });
+    return res.json({ message: "Staff update successful" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= XÓA USER =================
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -378,11 +336,11 @@ export const deleteUser = async (req, res) => {
       id,
     ]);
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy user" });
+      return res.status(404).json({ message: "User not found" });
 
     await db.query("DELETE FROM users WHERE user_id = ?", [id]);
-    return res.json({ message: "Xóa user thành công" });
+    return res.json({ message: "Delete user successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };

@@ -1,7 +1,5 @@
 import db from "../config/db.js";
 
-//promoController.js
-// ================= LẤY DANH SÁCH VOUCHER =================
 export const getPromotions = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -13,11 +11,10 @@ export const getPromotions = async (req, res) => {
 
     return res.json(rows);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= LẤY CHI TIẾT 1 VOUCHER =================
 export const getPromotionById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -31,20 +28,19 @@ export const getPromotionById = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy voucher" });
+      return res.status(404).json({ message: "Voucher not found" });
     }
 
     return res.json(rows[0]);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= TẠO VOUCHER =================
 export const createPromotion = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
-      return res.status(403).json({ message: "Chỉ admin mới có quyền" });
+      return res.status(403).json({ message: "Only admin has permission" });
     }
 
     let {
@@ -61,36 +57,35 @@ export const createPromotion = async (req, res) => {
     if (typeof title === "string") title = title.trim();
     if (typeof description === "string") description = description.trim();
 
-    // Validate
-    if (!title) return res.status(400).json({ message: "Tên voucher không được để trống" });
+    
+    if (!title) return res.status(400).json({ message: "Voucher name cannot be blank" });
     if (!discount_type || !["PERCENT", "AMOUNT"].includes(discount_type)) {
-      return res.status(400).json({ message: "discount_type phải là PERCENT hoặc AMOUNT" });
+      return res.status(400).json({ message: "discount_type must be PERCENT or AMOUNT" });
     }
     if (!discount_value || isNaN(discount_value)) {
-      return res.status(400).json({ message: "discount_value phải là số hợp lệ" });
+      return res.status(400).json({ message: "discount_value must be a valid number" });
     }
     discount_value = Number(discount_value);
     if (discount_type === "PERCENT" && (discount_value <= 0 || discount_value > 100)) {
-      return res.status(400).json({ message: "Giá trị phần trăm phải trong khoảng 1-100" });
+      return res.status(400).json({ message: "Percentage value must be between 1-100" });
     }
     if (discount_type === "AMOUNT" && discount_value <= 0) {
-      return res.status(400).json({ message: "Giá trị giảm phải lớn hơn 0" });
+      return res.status(400).json({ message: "The discount value must be greater than 0" });
     }
     if (!start_date || !end_date) {
-      return res.status(400).json({ message: "Ngày bắt đầu và kết thúc không được để trống" });
+      return res.status(400).json({ message: "Start and end dates cannot be blank" });
     }
     if (new Date(start_date) >= new Date(end_date)) {
-      return res.status(400).json({ message: "Ngày bắt đầu phải nhỏ hơn ngày kết thúc" });
+      return res.status(400).json({ message: "Start date must be less than end date" });
     }
 
-    // Kiểm tra branch_id
     
     if (!branch_id) return res.status(400).json({message:"Branch cannot be blank"})
 
     if (branch_id) {
       const [branchRows] = await db.query("SELECT * FROM branches WHERE branch_id = ?", [branch_id]);
       if (branchRows.length === 0) {
-        return res.status(400).json({ message: "Chi nhánh không tồn tại" });
+        return res.status(400).json({ message: "Branch does not exist" });
       }
     } 
 
@@ -101,17 +96,16 @@ export const createPromotion = async (req, res) => {
       [title, description, discount_type, discount_value, start_date, end_date, branch_id]
     );
 
-    return res.status(201).json({ message: "Thêm voucher thành công" });
+    return res.status(201).json({ message: "Added voucher successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= CẬP NHẬT VOUCHER =================
 export const updatePromotion = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
-      return res.status(403).json({ message: "Chỉ admin mới có quyền" });
+      return res.status(403).json({ message: "Only admin has permission" });
     }
 
     const { id } = req.params;
@@ -125,52 +119,52 @@ export const updatePromotion = async (req, res) => {
       branch_id,
     } = req.body;
 
-    // Lấy dữ liệu cũ
+    
     const [rows] = await db.query("SELECT * FROM promotions WHERE promo_id = ?", [id]);
-    if (rows.length === 0) return res.status(404).json({ message: "Không tìm thấy voucher" });
+    if (rows.length === 0) return res.status(404).json({ message: "Voucher not found" });
     const oldData = rows[0];
 
-    // Trim
+    
     if (typeof title === "string") title = title.trim();
     if (typeof description === "string") description = description.trim();
 
-    // Validate cơ bản
+    
     if (title !== undefined && title === "") {
-      return res.status(400).json({ message: "Tên voucher không được để trống" });
+      return res.status(400).json({ message: "Voucher name cannot be blank" });
     }
 
     if (discount_type !== undefined && !["PERCENT", "AMOUNT"].includes(discount_type)) {
-      return res.status(400).json({ message: "discount_type phải là PERCENT hoặc AMOUNT" });
+      return res.status(400).json({ message: "discount_type must be PERCENT or AMOUNT" });
     }
 
     if (discount_value !== undefined) {
       discount_value = Number(discount_value);
       if (isNaN(discount_value)) {
-        return res.status(400).json({ message: "discount_value phải là số hợp lệ" });
+        return res.status(400).json({ message: "discount_value must be a valid number" });
       }
       if (discount_type === "PERCENT" && (discount_value <= 0 || discount_value > 100)) {
-        return res.status(400).json({ message: "Giá trị phần trăm phải trong khoảng 1-100" });
+        return res.status(400).json({ message: "Percentage value must be between 1-100" });
       }
       if (discount_type === "AMOUNT" && discount_value <= 0) {
-        return res.status(400).json({ message: "Giá trị giảm phải lớn hơn 0" });
+        return res.status(400).json({ message: "The discount value must be greater than 0" });
       }
     }
 
     if (start_date !== undefined && end_date !== undefined) {
       if (new Date(start_date) >= new Date(end_date)) {
-        return res.status(400).json({ message: "Ngày bắt đầu phải nhỏ hơn ngày kết thúc" });
+        return res.status(400).json({ message: "Start date must be less than end date" });
       }
     }
 
-    // Kiểm tra branch_id
+    
     if (branch_id !== undefined && branch_id !== null) {
       const [branchRows] = await db.query("SELECT * FROM branches WHERE branch_id = ?", [branch_id]);
       if (branchRows.length === 0) {
-        return res.status(400).json({ message: "Chi nhánh không tồn tại" });
+        return res.status(400).json({ message: "Branch does not exist" });
       }
     }
 
-    // Giữ nguyên dữ liệu cũ nếu không truyền mới
+    
     title = title || oldData.title;
     description = description || oldData.description;
     discount_type = discount_type || oldData.discount_type;
@@ -179,7 +173,7 @@ export const updatePromotion = async (req, res) => {
     end_date = end_date || oldData.end_date;
     branch_id = branch_id !== undefined ? branch_id : oldData.branch_id;
 
-    // Check no change
+    
     const noChange =
       title === oldData.title &&
       description === oldData.description &&
@@ -190,7 +184,7 @@ export const updatePromotion = async (req, res) => {
       branch_id === oldData.branch_id;
 
     if (noChange) {
-      return res.status(400).json({ message: "Không có thông tin nào được thay đổi" });
+      return res.status(400).json({ message: "No information has been changed" });
     }
 
     await db.query(
@@ -200,26 +194,26 @@ export const updatePromotion = async (req, res) => {
       [title, description, discount_type, discount_value, start_date, end_date, branch_id, id]
     );
 
-    return res.json({ message: "Cập nhật voucher thành công" });
+    return res.json({ message: "Voucher update successful" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= XÓA VOUCHER =================
+
 export const deletePromotion = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
-      return res.status(403).json({ message: "Chỉ admin mới có quyền" });
+      return res.status(403).json({ message: "Only admin has permission" });
     }
 
     const { id } = req.params;
     const [rows] = await db.query("SELECT * FROM promotions WHERE promo_id = ?", [id]);
-    if (rows.length === 0) return res.status(404).json({ message: "Không tìm thấy voucher" });
+    if (rows.length === 0) return res.status(404).json({ message: "Voucher not found" });
 
     await db.query("DELETE FROM promotions WHERE promo_id = ?", [id]);
-    return res.json({ message: "Xóa voucher thành công" });
+    return res.json({ message: "Voucher deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };

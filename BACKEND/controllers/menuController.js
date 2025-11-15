@@ -1,14 +1,13 @@
 import db from "../config/db.js";
 import { upload } from "../middlewares/uploadMiddlewares.js";
 
-// ================= LẤY DANH SÁCH MÓN ĂN THEO CHI NHÁNH =================
 export const getMenuItems = async (req, res) => {
   try {
     const branchId =
       req.user.role === "STAFF" ? req.user.branch_id : req.query.branch_id;
 
     if (!branchId) {
-      return res.status(400).json({ message: "Thiếu branch_id" });
+      return res.status(400).json({ message: "Missing branch_id" });
     }
 
     const [rows] = await db.query(
@@ -34,11 +33,10 @@ export const getMenuItems = async (req, res) => {
 
     return res.json(rows);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= LẤY CHI TIẾT 1 MÓN ĂN =================
 export const getMenuItemById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -49,7 +47,7 @@ export const getMenuItemById = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy món ăn" });
+      return res.status(404).json({ message: "No dishes found" });
     }
 
     const item = rows[0];
@@ -57,10 +55,9 @@ export const getMenuItemById = async (req, res) => {
     if (req.user.role === "STAFF" && item.branch_id !== req.user.branch_id) {
       return res
         .status(403)
-        .json({ message: "Không có quyền xem món ăn của chi nhánh khác" });
+        .json({ message: "No permission to view other branch's dishes" });
     }
 
-    // Lấy option groups kèm choices
     const [groups] = await db.query(
       `SELECT og.group_id, og.name AS group_name, og.selection_type, og.is_required
        FROM item_option_groups og
@@ -80,11 +77,10 @@ export const getMenuItemById = async (req, res) => {
     return res.json({ ...item, optionGroups: groups });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= TẠO MÓN ĂN =================
 export const createMenuItem = async (req, res) => {
   try {
     let {
@@ -103,11 +99,10 @@ export const createMenuItem = async (req, res) => {
       } catch (e) {
         return res
           .status(400)
-          .json({ message: "optionsDef không phải JSON hợp lệ" });
+          .json({ message: "optionsDef is not valid JSON" });
       }
     }
 
-    // Ảnh lấy từ file upload
     let image = null;
     if (req.file) {
       image = `/uploads/${req.file.filename}`;
@@ -117,21 +112,19 @@ export const createMenuItem = async (req, res) => {
       req.user.role === "STAFF" ? req.user.branch_id : req.body.branch_id;
 
     if (!branchId) {
-      return res.status(400).json({ message: "Thiếu branch_id" });
+      return res.status(400).json({ message: "Missing branch_id" });
     }
 
-    // Trim
     if (typeof name === "string") name = name.trim();
     if (typeof description === "string") description = description.trim();
 
-    // Validate cơ bản (giữ logic bạn đã có)
     if (!name)
       return res
         .status(400)
-        .json({ message: "Tên món ăn không được để trống" });
+        .json({ message: "Dish name cannot be blank" });
 
     if (!price || isNaN(price))
-      return res.status(400).json({ message: "Giá món ăn phải là số hợp lệ" });
+      return res.status(400).json({ message: "The price of the dish must be a valid number." });
 
     if (
       stock_quantity !== undefined &&
@@ -142,10 +135,10 @@ export const createMenuItem = async (req, res) => {
       if (isNaN(stock_quantity) || stock_quantity < 0) {
         return res
           .status(400)
-          .json({ message: "Số lượng phải là một số lớn hơn hoặc bằng 0" });
+          .json({ message: "Quantity must be a number greater than or equal to 0" });
       }
     } else {
-      stock_quantity = 0; // Mặc định là 0
+      stock_quantity = 0;
     }
     const is_available = stock_quantity > 0 ? 1 : 0;
 
@@ -154,7 +147,7 @@ export const createMenuItem = async (req, res) => {
       [category_id]
     );
     if (categoryRows.length === 0) {
-      return res.status(400).json({ message: "Category không tồn tại" });
+      return res.status(400).json({ message: "Category does not exist" });
     }
 
     const category = categoryRows[0];
@@ -164,10 +157,9 @@ export const createMenuItem = async (req, res) => {
     ) {
       return res
         .status(403)
-        .json({ message: "Không có quyền sử dụng category này" });
+        .json({ message: "No permission to use this category" });
     }
 
-    // -------------- Insert menu_items --------------
     const [result] = await db.query(
       "INSERT INTO menu_items (name, image, category_id, description, price, branch_id, stock_quantity, is_available, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
       [
@@ -184,13 +176,12 @@ export const createMenuItem = async (req, res) => {
 
     const itemId = result.insertId;
 
-    // -------------- Insert options nếu có --------------
     // optionsDef expected: [{ name, selection_type: 'SINGLE'|'MULTI', is_required:0|1, choices: [{name, price_delta}] }, ...]
     if (optionsDef && Array.isArray(optionsDef) && optionsDef.length > 0) {
       for (let gi = 0; gi < optionsDef.length; gi++) {
         const group = optionsDef[gi];
-        // Basic validation per group
-        if (!group.name) continue; // skip invalid group
+        
+        if (!group.name) continue; 
         const selType = group.selection_type === "MULTI" ? "MULTI" : "SINGLE";
         const isReq = group.is_required ? 1 : 0;
 
@@ -217,14 +208,13 @@ export const createMenuItem = async (req, res) => {
 
     return res
       .status(201)
-      .json({ message: "Thêm món ăn thành công", item_id: itemId });
+      .json({ message: "Add dish successfully", item_id: itemId });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= CẬP NHẬT MÓN ĂN (mới: hỗ trợ options giống create) =================
 export const updateMenuItem = async (req, res) => {
   const { id } = req.params;
   try {
@@ -235,55 +225,51 @@ export const updateMenuItem = async (req, res) => {
       price,
       is_available,
       stock_quantity,
-      optionsDef, // <-- optional; nếu gửi thì cập nhật groups/choices tương tự create
+      optionsDef,
     } = req.body;
 
-    // Nếu frontend gửi multipart/form-data, optionsDef có thể là string JSON
     if (typeof optionsDef === "string" && optionsDef.trim() !== "") {
       try {
         optionsDef = JSON.parse(optionsDef);
       } catch (e) {
         return res
           .status(400)
-          .json({ message: "optionsDef không phải JSON hợp lệ" });
+          .json({ message: "optionsDef is not valid JSON" });
       }
     }
 
-    // Ảnh lấy từ file upload
     let image = null;
     if (req.file) {
       image = `/uploads/${req.file.filename}`;
     }
 
-    // Lấy dữ liệu cũ
     const [rows] = await db.query(
       "SELECT * FROM menu_items WHERE item_id = ?",
       [id]
     );
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy món ăn" });
+      return res.status(404).json({ message: "No food found" });
     const oldData = rows[0];
 
-    // Staff chỉ được sửa món ăn thuộc chi nhánh mình
     if (req.user.role === "STAFF" && oldData.branch_id !== req.user.branch_id) {
       return res
         .status(403)
-        .json({ message: "Không có quyền sửa món ăn của chi nhánh khác" });
+        .json({ message: "No right to edit other branch's dishes" });
     }
 
-    // Trim chuỗi
+    
     if (typeof name === "string") name = name.trim();
     if (typeof description === "string") description = description.trim();
 
-    // Validate basic fields
+    
     if (name !== undefined && name === "") {
       return res
         .status(400)
-        .json({ message: "Tên món ăn không được để trống" });
+        .json({ message: "Dish name cannot be blank" });
     }
 
     if (price !== undefined && isNaN(price)) {
-      return res.status(400).json({ message: "Giá món ăn phải là số hợp lệ" });
+      return res.status(400).json({ message: "The price of the dish must be a valid number" });
     }
 
     let final_stock = oldData.stock_quantity;
@@ -297,7 +283,7 @@ export const updateMenuItem = async (req, res) => {
         if (isNaN(final_stock) || final_stock < 0) {
           return res
             .status(400)
-            .json({ message: "Số lượng phải là một số lớn hơn hoặc bằng 0" });
+            .json({ message: "Quantity must be a number greater than or equal to 0" });
         }
       }
     }
@@ -310,14 +296,14 @@ export const updateMenuItem = async (req, res) => {
       final_available = 0;
     }
 
-    // Kiểm tra category_id hợp lệ (nếu truyền mới)
+    
     if (category_id !== undefined && category_id !== null) {
       const [categoryRows] = await db.query(
         "SELECT * FROM category WHERE category_id = ?",
         [category_id]
       );
       if (categoryRows.length === 0) {
-        return res.status(400).json({ message: "Category không tồn tại" });
+        return res.status(400).json({ message: "Category does not exist" });
       }
       const category = categoryRows[0];
       if (
@@ -326,11 +312,11 @@ export const updateMenuItem = async (req, res) => {
       ) {
         return res
           .status(403)
-          .json({ message: "Không có quyền sử dụng category này" });
+          .json({ message: "No permission to use this category" });
       }
     }
 
-    // Dùng dữ liệu cũ nếu không truyền mới
+    
     name = name || oldData.name;
     image = image || oldData.image;
     category_id = category_id || oldData.category_id;
@@ -338,7 +324,6 @@ export const updateMenuItem = async (req, res) => {
     price = price || oldData.price;
     // is_available = is_available !== undefined ? is_available : oldData.is_available;
 
-    // Check no change
     const basicNoChange =
       name === oldData.name &&
       image === oldData.image &&
@@ -351,10 +336,9 @@ export const updateMenuItem = async (req, res) => {
     if (basicNoChange && !optionsDef) {
       return res
         .status(400)
-        .json({ message: "Không có thông tin nào được thay đổi" });
+        .json({ message: "No information has been changed" });
     }
 
-    // --- Update menu_items basic fields ---
     await db.query(
       `UPDATE menu_items
        SET name=?, image=?, category_id=?, description=?, price=?, stock_quantity=?, is_available=?
@@ -371,21 +355,17 @@ export const updateMenuItem = async (req, res) => {
       ]
     );
 
-    // --- If optionsDef provided, replace existing groups & choices ---
-    // Approach: delete all existing groups for this item (which cascades to choices), then insert new ones.
-    // This approach is simple and safe for now. If you need to preserve choice_id's or do partial updates,
-    // implement diff logic instead.
     if (optionsDef && Array.isArray(optionsDef)) {
       try {
-        // Delete old groups (choices will be deleted by FK cascade)
+        
         await db.query("DELETE FROM item_option_groups WHERE item_id = ?", [
           id,
         ]);
 
-        // Insert new groups & choices (same logic as create)
+        
         for (let gi = 0; gi < optionsDef.length; gi++) {
           const group = optionsDef[gi];
-          // Skip invalid/empty groups
+          
           if (!group || !group.name || !String(group.name).trim()) continue;
 
           const selType = group.selection_type === "MULTI" ? "MULTI" : "SINGLE";
@@ -414,24 +394,22 @@ export const updateMenuItem = async (req, res) => {
           }
         }
       } catch (err) {
-        // If something fails during options update, log error and inform client.
-        // Note: without transaction, menu_items update already committed — consider adding transaction if you want atomicity.
+        
         console.error("Error updating options for item", id, err);
         return res.status(500).json({
-          message: "Lỗi khi cập nhật tùy chọn món ăn",
+          message: "Error updating food options",
           error: err.message || err,
         });
       }
     }
 
-    return res.json({ message: "Cập nhật món ăn thành công" });
+    return res.json({ message: "Dish update successful" });
   } catch (error) {
     console.error("updateMenuItem error:", error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= XÓA MÓN ĂN =================
 export const deleteMenuItem = async (req, res) => {
   try {
     const { id } = req.params;
@@ -441,20 +419,19 @@ export const deleteMenuItem = async (req, res) => {
       [id]
     );
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy món ăn" });
+      return res.status(404).json({ message: "No dishes found" });
 
     const item = rows[0];
 
-    // Staff chỉ được xóa món ăn thuộc chi nhánh mình
     if (req.user.role === "STAFF" && item.branch_id !== req.user.branch_id) {
       return res
         .status(403)
-        .json({ message: "Không có quyền xóa món ăn của chi nhánh khác" });
+        .json({ message: "No right to delete other branch's dishes" });
     }
 
     await db.query("DELETE FROM menu_items WHERE item_id = ?", [id]);
-    return res.json({ message: "Xóa món ăn thành công" });
+    return res.json({ message: "Deleted dish successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };

@@ -1,6 +1,5 @@
 import db from "../config/db.js";
 
-// ================= Get all branch =================
 export const getAllBranch = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -8,15 +7,13 @@ export const getAllBranch = async (req, res) => {
     );
     return res.json(rows);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= Create new branch =================
 export const createBranch = async (req, res) => {
   try {
     let { name, address, phone, status } = req.body;
-    // Trim chuỗi nếu có
     if (typeof name === "string") name = name.trim();
     if (typeof address === "string") address = address.trim();
     if (typeof phone === "string") phone = phone.trim();
@@ -28,31 +25,30 @@ export const createBranch = async (req, res) => {
         (typeof value === "string" && value.trim() === "")
       ) {
         return res.status(400).json({
-          message: `Trường '${key}' không được để trống hoặc chỉ chứa khoảng trắng`,
+          message: `'${key}' cannot be blank or contain only spaces`,
         });
       }
     }
 
-    // Kiểm tra phone hợp lệ
+
     if (!/^\d{9,11}$/.test(phone)) {
       return res.status(400).json({
-        message: "Số điện thoại không hợp lệ. Chỉ được chứa 9-11 chữ số.",
+        message: "Invalid phone number. Must contain 9-11 digits only.",
       });
     }
 
     if (!["ACTIVE", "INACTIVE"].includes(status)) {
       return res.status(400).json({
         message:
-          "Trạng thái không hợp lệ. Chỉ chấp nhận 'ACTIVE' hoặc 'INACTIVE'.",
+          "Invalid status. Only 'ACTIVE' or 'INACTIVE' is accepted",
       });
     }
 
-    // Kiểm tra trùng tên chi nhánh (tuỳ chọn)
     const [exists] = await db.query("SELECT * FROM branches WHERE name = ?", [
       name,
     ]);
     if (exists.length > 0) {
-      return res.status(400).json({ message: "Tên chi nhánh đã tồn tại." });
+      return res.status(400).json({ message: "The branch name already exists" });
     }
 
     await db.query(
@@ -60,13 +56,12 @@ export const createBranch = async (req, res) => {
       [name, address, phone, status]
     );
 
-    return res.status(201).json({ message: "Tạo branch thành công" });
+    return res.status(201).json({ message: "Branch created successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= Update branch =================
 export const updateBranch = async (req, res) => {
   try {
     const { id } = req.params;
@@ -77,7 +72,7 @@ export const updateBranch = async (req, res) => {
       [id]
     );
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy chi nhánh" });
+      return res.status(404).json({ message: "No branch found" });
     }
     const oldData = rows[0];
 
@@ -93,21 +88,21 @@ export const updateBranch = async (req, res) => {
         value.trim() === ""
       ) {
         return res.status(400).json({
-          message: `Trường '${key}' không được để trống hoặc chỉ chứa khoảng trắng.`,
+          message: `'${key}' cannot be blank or contain only spaces`,
         });
       }
     }
 
     if (phone && !/^\d{9,11}$/.test(phone)) {
       return res.status(400).json({
-        message: "Số điện thoại không hợp lệ. Chỉ được chứa 9-11 chữ số.",
+        message: "Invalid phone number. Must contain 9-11 digits only.",
       });
     }
 
     if (status && !["ACTIVE", "INACTIVE"].includes(status)) {
       return res.status(400).json({
         message:
-          "Trạng thái không hợp lệ. Chỉ chấp nhận 'ACTIVE' hoặc 'INACTIVE'.",
+          "Invalid status. Only 'ACTIVE' or 'INACTIVE' is accepted",
       });
     }
 
@@ -125,7 +120,7 @@ export const updateBranch = async (req, res) => {
     if (noChange) {
       return res
         .status(400)
-        .json({ message: "Không có thông tin nào được thay đổi." });
+        .json({ message: "No information has been changed" });
     }
 
     await db.query(
@@ -133,13 +128,12 @@ export const updateBranch = async (req, res) => {
       [name, address, phone, status, id]
     );
 
-    return res.json({ message: "Cập nhật chi nhánh thành công." });
+    return res.json({ message: "Branch update successful" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= XÓA Branch =================
 export const deleteBranch = async (req, res) => {
   try {
     const { id } = req.params;
@@ -148,16 +142,16 @@ export const deleteBranch = async (req, res) => {
       [id]
     );
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy chi nhánh" });
+      return res.status(404).json({ message: "No branch found" });
 
     await db.query("DELETE FROM branches WHERE branch_id = ?", [id]);
-    return res.json({ message: "Xóa chi nhánh thành công" });
+    return res.json({ message: "Branch deletion successful" });
   } catch (error) {
-    console.error("LỖI KHI XÓA CHI NHÁNH:", error);
-    let errorMessage = "Lỗi server";
+    console.error("ERROR WHEN DELETING BRANCH:", error);
+    let errorMessage = "Server error";
     if (error.code === "ER_ROW_IS_REFERENCED_2" || error.errno === 1451) {
       errorMessage =
-        "Không thể xóa chi nhánh này. Đang có dữ liệu (như đơn hàng, nhân viên, nhập hàng,...) liên kết với nó.";
+        "This branch cannot be deleted. There is data (such as orders, employees, imports, etc.) associated with it";
       return res.status(400).json({ message: errorMessage });
     }
     return res

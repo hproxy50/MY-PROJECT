@@ -12,39 +12,33 @@ import {
   ListGroup,
   Badge,
 } from "react-bootstrap";
-import API from "../../api/api.js"; // ❗️ Hãy chắc chắn đường dẫn này đúng
-import { formatDistanceToNow } from "date-fns";
-import { vi } from "date-fns/locale"; // Import tiếng Việt
+import API from "../../api/api.js";
 
-// Cài đặt: npm install date-fns
-
-// Component con cho từng "Phiếu" đơn hàng
-// Giúp code sạch sẽ hơn
 function OrderTicket({ order, onApprove, isApproving }) {
-  // Tính toán thời gian
-  const timeAgo = formatDistanceToNow(new Date(order.created_at), {
-    addSuffix: true,
-    locale: vi,
-  });
-
   return (
-    <Col xs={12} sm={6} md={4} lg={3} className="mb-4">
-      <Card className="h-100 shadow-sm border-warning" style={{ borderLeftWidth: "4px" }}>
+    <div>
+          <Col xs={12} sm={6} md={4} lg={3} className="mb-4">
+      <Card className="h-100">
         <Card.Header className="d-flex justify-content-between align-items-center bg-white">
           <Card.Title className="h5 mb-0 text-dark">
             Đơn #{order.order_id}
           </Card.Title>
-          <small className="text-muted">{timeAgo}</small>
+          <small className="text-muted">
+            {new Date(order.scheduled_time).toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </small>
         </Card.Header>
 
         <ListGroup variant="flush">
           {order.items.map((item, index) => (
             <ListGroup.Item key={index} className="px-3 py-2">
               <div className="d-flex align-items-start">
-                <Badge 
-                  pill 
-                  bg="dark" 
-                  className="me-2 px-2" 
+                <Badge
+                  pill
+                  bg="dark"
+                  className="me-2 px-2"
                   style={{ fontSize: "0.9rem", marginTop: "3px" }}
                 >
                   {item.quantity}x
@@ -67,7 +61,7 @@ function OrderTicket({ order, onApprove, isApproving }) {
             variant="success"
             className="w-100 fw-bold"
             onClick={() => onApprove(order.order_id)}
-            disabled={isApproving} // Vô hiệu hóa khi đang duyệt
+            disabled={isApproving}
           >
             {isApproving ? (
               <Spinner as="span" animation="border" size="sm" role="status" />
@@ -78,6 +72,7 @@ function OrderTicket({ order, onApprove, isApproving }) {
         </Card.Footer>
       </Card>
     </Col>
+    </div>
   );
 }
 
@@ -117,10 +112,11 @@ export default function ChefDashboard() {
     try {
       // API của bạn hỗ trợ cả { order_id: ... }
       await API.patch("/chef/orders/approve", { order_id: orderId });
-      
-      // Xóa đơn đã duyệt khỏi danh sách trên UI ngay lập tức
-      setOrders(prevOrders => prevOrders.filter(o => o.order_id !== orderId));
 
+      // Xóa đơn đã duyệt khỏi danh sách trên UI ngay lập tức
+      setOrders((prevOrders) =>
+        prevOrders.filter((o) => o.order_id !== orderId)
+      );
     } catch (err) {
       setError(
         err.response?.data?.message || "Lỗi khi duyệt đơn. Vui lòng thử lại."
@@ -147,7 +143,12 @@ export default function ChefDashboard() {
   // --- RENDER GIAO DIỆN ---
   return (
     <>
-      <Navbar bg="dark" variant="dark" expand="lg" className="shadow-sm sticky-top">
+      <Navbar
+        bg="dark"
+        variant="dark"
+        expand="lg"
+        className="shadow-sm sticky-top"
+      >
         <Container fluid>
           <Navbar.Brand href="#home" className="fw-bold">
             <i className="bi bi-person-fill-gear me-2"></i>
@@ -180,7 +181,11 @@ export default function ChefDashboard() {
         {/* Trạng thái Loading ban đầu */}
         {loading && (
           <div className="text-center py-5">
-            <Spinner animation="border" variant="primary" style={{ width: "3rem", height: "3rem" }} />
+            <Spinner
+              animation="border"
+              variant="primary"
+              style={{ width: "3rem", height: "3rem" }}
+            />
             <p className="mt-2">Đang tải đơn hàng...</p>
           </div>
         )}

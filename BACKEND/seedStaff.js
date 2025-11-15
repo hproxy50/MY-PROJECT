@@ -10,7 +10,7 @@ async function createStaff() {
   try {
     const email = "Staff5@gmail.com";
     const name = "Staff5";
-    const password = "123"; // sau khi chạy hãy đổi mật khẩu
+    const password = "123"; 
     const phone = "0543217890";
     const branch_id = 5;
 

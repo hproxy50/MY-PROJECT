@@ -11,19 +11,14 @@ import {
   Offcanvas,
 } from "react-bootstrap";
 import { Routes, Route, Link } from "react-router-dom";
-import AdminStaffCRUD from './AdminStaffCRUD'
+import AdminStaffCRUD from "./AdminStaffCRUD";
 import AdminBranches from "./AdminBranches";
-import AdminPromtion from "./AdminPromotion"
+import AdminPromtion from "./AdminPromotion";
 
 function SidebarContent({ onLinkClick }) {
   return (
     <Nav className="flex-column">
-      <Nav.Link
-        as={Link}
-        to="#"
-        className="text-white"
-        onClick={onLinkClick}
-      >
+      <Nav.Link as={Link} to="#" className="text-white" onClick={onLinkClick}>
         Dashboard
       </Nav.Link>
       <Nav.Link
@@ -70,15 +65,23 @@ function Header({ onToggleSidebar }) {
         <Navbar.Toggle aria-controls="navbarScroll" />
         <Navbar.Collapse id="navbarScroll" className="justify-content-end">
           <Nav>
-            <Nav.Link href="#">Logout</Nav.Link>
+            <Nav.Link
+              onClick={() => {
+                const confirmed = window.confirm("Are you sure to log out?");
+                if (confirmed) {
+                  localStorage.removeItem("token");
+                  navigate("/");
+                }
+              }}
+            >
+              Logout
+            </Nav.Link>
           </Nav>
         </Navbar.Collapse>
       </Container>
     </Navbar>
   );
 }
-
-
 
 export default function StaffDashboard() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -114,8 +117,8 @@ export default function StaffDashboard() {
           <Col xs={12} lg={{ span: 10, offset: 2 }} className="p-4">
             <Routes>
               <Route path="staffCRUD" element={<AdminStaffCRUD />} />
-              <Route path="adminBranches" element={<AdminBranches/>} />
-              <Route path="adminPromotion" element={<AdminPromtion/>} />
+              <Route path="adminBranches" element={<AdminBranches />} />
+              <Route path="adminPromotion" element={<AdminPromtion />} />
             </Routes>
           </Col>
         </Row>

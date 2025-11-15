@@ -98,15 +98,14 @@ export default function Checkout() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // --- SỬA LỖI 2: Gán kết quả API cho biến 'response' ---
       const response = await API.post(
         "/cart",
         { branch_id: checkoutData.branch.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // ----------------------------------------------------
+      
 
-      const newOrderId = response.data?.order_id; // Bây giờ 'response' đã tồn tại
+      const newOrderId = response.data?.order_id; 
       const currentBranchId = checkoutData.branch.id;
 
       if (newOrderId && currentBranchId) {
@@ -119,13 +118,11 @@ export default function Checkout() {
         navigate("/");
       }
     } catch (err) {
-      // Bây giờ alert sẽ hiển thị đúng thông báo từ backend (Vd: "Vui lòng chọn giờ cho TAKEAWAY")
       alert(err.response?.data?.message || "err order");
     }
   };
   
   const handleConfirmQR = async () => {
-    // --- Validate chung cho PICKUP ---
     if (deliveryMethod === "pickup") {
       if (!form.scheduled_time.trim()) {
         alert("Please select the time you will come");
@@ -133,7 +130,6 @@ export default function Checkout() {
       }
     }
 
-    // --- Validate cho DELIVERY ---
     if (deliveryMethod === "delivery") {
       if (!form.customer_phone.trim()) {
         alert("Please enter recipient phone");
@@ -182,14 +178,14 @@ export default function Checkout() {
 
   function getCurrentDateTimeLocal() {
     const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // Local time
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().slice(0, 16);
   }
 
-  // 2. State cho minDateTime
+
   const [minDateTime] = useState(getCurrentDateTimeLocal());
 
-  // // 3. Hàm xử lý khi người dùng chọn thời gian
+  //
   // function handleTimeChange(e) {
   //   const selectedDate = new Date(e.target.value);
   //   const hour = selectedDate.getHours();
@@ -200,14 +196,14 @@ export default function Checkout() {
   //   }
   // }
 
-  // Lấy danh sách promo khi load trang checkout
+
   useEffect(() => {
     const fetchPromos = async () => {
       try {
         const res = await API.get(`/promotion`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        // Lọc theo branch + thời gian hiệu lực
+        
         const available = res.data.filter(
           (p) =>
             p.branch_id === checkoutData.branch.id &&
@@ -216,13 +212,13 @@ export default function Checkout() {
         );
         setPromos(available);
       } catch (err) {
-        console.error("Lỗi khi load promotions:", err);
+        console.error("Error loading promotions:", err);
       }
     };
     if (checkoutData) fetchPromos();
   }, [checkoutData]);
 
-  if (!checkoutData) return <p>Đang tải...</p>;
+  if (!checkoutData) return <p>Loading...</p>;
 
   return (
     <>

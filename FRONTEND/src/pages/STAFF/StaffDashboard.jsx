@@ -15,13 +15,14 @@ import StaffOrder from "./StaffOrder"
 import StaffMenu from "./StaffMenu";
 import StaffProduct from "./StaffProduct";
 import StaffCategory from "./StaffCategory";
+import StaffStat from "./StaffStat"
 
 // ----- Sidebar Content (Tách riêng nội dung để tái sử dụng) -----
 function SidebarContent({ onLinkClick }) {
   // onLinkClick để đóng Offcanvas khi bấm link trên mobile
   return (
     <Nav className="flex-column">
-      <Nav.Link as={Link} to="/staff/dashboard" className="text-white" onClick={onLinkClick}>
+      <Nav.Link as={Link} to="/staff/stat" className="text-white" onClick={onLinkClick}>
         Dashboard
       </Nav.Link>
       <Nav.Link as={Link} to="/staff/category" className="text-white" onClick={onLinkClick}>
@@ -40,55 +41,27 @@ function SidebarContent({ onLinkClick }) {
   );
 }
 
-// ----- Header (Sửa để nhận prop) -----
+
 function Header({ onToggleSidebar }) {
   return (
     <Navbar bg="light" expand="lg" className="shadow-sm sticky-top">
       <Container fluid>
-        {/* BỔ SUNG: Nút bật Offcanvas (chỉ hiện trên mobile) */}
         <Button
           variant="outline-secondary"
           onClick={onToggleSidebar}
-          className="d-lg-none me-2" // Chỉ hiển thị dưới breakpoint 'lg'
+          className="d-lg-none me-2"
         >
-          <i className="bi bi-list"></i> {/* Thay bằng icon menu nếu có */}
+          <i className="bi bi-list"></i>
           Menu
         </Button>
 
         <Navbar.Brand href="#">Staff Dashboard</Navbar.Brand>
 
-        {/* Nút toggle cho "Logout" (sẽ ẩn trên desktop) */}
-        <Navbar.Toggle aria-controls="navbarScroll" />
-        <Navbar.Collapse id="navbarScroll" className="justify-content-end">
-          <Nav>
-            <Nav.Link href="#">Logout</Nav.Link>
-          </Nav>
-        </Navbar.Collapse>
       </Container>
     </Navbar>
   );
 }
 
-// ----- Dashboard (Giữ nguyên) -----
-function Dashboard() {
-  return (
-    <div>
-      <h3 className="mb-4">📊 Dashboard Overview</h3>
-      <Row className="mb-4">
-        {["Users", "Orders Today", "Revenue", "Pending"].map((title, i) => (
-          <Col md={3} xs={6} key={i} className="mb-3"> {/* Thêm xs={6} và mb-3 */}
-            <Card className="text-center shadow-sm">
-              <Card.Body>
-                <Card.Title>{title}</Card.Title>
-                <h2>{[1245, 87, "$5,430", 12][i]}</h2>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </div>
-  );
-}
 
 
 // ----- Layout chính (Sửa) -----
@@ -148,7 +121,7 @@ export default function StaffDashboard() {
             // BỎ: style={{ marginLeft: "220px" }}
           >
             <Routes>
-              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="stat" element={<StaffStat />} />
               <Route path="menu" element={<StaffMenu />} />
               <Route path="orders" element={<StaffOrder/>} />
               <Route path="products" element={<StaffProduct/>} />

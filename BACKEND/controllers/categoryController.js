@@ -1,13 +1,12 @@
 import db from "../config/db.js";
 
-// ================= LẤY DANH SÁCH CATEGORY CHI NHÁNH =================
 export const getCategory = async (req, res) => {
   try {
     const branchId =
       req.user.role === "STAFF" ? req.user.branch_id : req.query.branch_id;
 
     if (!branchId) {
-      return res.status(400).json({ message: "Thiếu branch_id" });
+      return res.status(400).json({ message: "Missing branch_id" });
     }
 
     const [rows] = await db.query(
@@ -17,11 +16,10 @@ export const getCategory = async (req, res) => {
 
     return res.json(rows);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= LẤY CHI TIẾT 1 CATEGORY =================
 export const getCategoryId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -32,25 +30,23 @@ export const getCategoryId = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy category" });
+      return res.status(404).json({ message: "Category not found" });
     }
 
     const category = rows[0];
 
-    // STAFF chỉ xem được món ăn thuộc chi nhánh mình
     if (req.user.role === "STAFF" && category.branch_id !== req.user.branch_id) {
       return res
         .status(403)
-        .json({ message: "Không có quyền của chi nhánh khác" });
+        .json({ message: "No permission to view other branch categories" });
     }
 
     return res.json(category);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= TẠO CATEGORY =================
 export const createCategory = async (req, res) => {
   try {
     let { food_type } = req.body;
@@ -59,89 +55,76 @@ export const createCategory = async (req, res) => {
       req.user.role === "STAFF" ? req.user.branch_id : req.body.branch_id;
 
     if (!branchId) {
-      return res.status(400).json({ message: "Thiếu branch_id" });
+      return res.status(400).json({ message: "Missing branch_id" });
     }
 
-    // Trim
     if (typeof food_type === "string") food_type = food_type.trim();
 
-    // Validate
     if (!food_type)
       return res
         .status(400)
-        .json({ message: "Tên category không được để trống" });
+        .json({ message: "Category name cannot be blank" });
 
     await db.query(
       "INSERT INTO category (branch_id, food_type) VALUES (?, ?)",
       [branchId, food_type]
     );
 
-    return res.status(201).json({ message: "Thêm category thành công" });
+    return res.status(201).json({ message: "Category added successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= UPDATE CATEGORY =================
 export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     let { food_type } = req.body;
 
-    // Lấy dữ liệu cũ
     const [rows] = await db.query(
       "SELECT * FROM category WHERE category_id = ?",
       [id]
     );
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy category" });
+      return res.status(404).json({ message: "Category not found" });
     const oldData = rows[0];
 
-    // Staff chỉ được sửa món ăn thuộc chi nhánh mình
     if (req.user.role === "STAFF" && oldData.branch_id !== req.user.branch_id) {
       return res
         .status(403)
-        .json({ message: "Không có quyền sửa của chi nhánh khác" });
+        .json({ message: "No right to edit category of other branch" });
     }
 
-    // Trim chuỗi
     if (typeof food_type === "string") food_type = food_type.trim();
-
-    // Validate
-    //Validate: Nếu truyền name rỗng => báo lỗi
 
     if (food_type !== undefined && food_type === "") {
       return res
         .status(400)
-        .json({ message: "Tên category không được để trống" });
+        .json({ message: "Category name cannot be blank" });
     }
 
-    // Dùng dữ liệu cũ nếu không truyền mới
     food_type = food_type || oldData.name;
 
-    // Check no change
     const noChange =
       food_type === oldData.food_type;
 
     if (noChange) {
       return res
         .status(400)
-        .json({ message: "Không có thông tin nào được thay đổi" });
+        .json({ message: "No information has been changed" });
     }
 
-    // Update DB
     await db.query(
       "UPDATE category SET food_type=? WHERE category_id=?",
       [food_type, id]
     );
 
-    return res.json({ message: "Cập category thành công" });
+    return res.json({ message: "Category updated successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= XÓA MÓN ĂN =================
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -151,20 +134,19 @@ export const deleteCategory = async (req, res) => {
       [id]
     );
     if (rows.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy category" });
+      return res.status(404).json({ message: "Category not found" });
 
     const item = rows[0];
 
-    // Staff chỉ được xóa món ăn thuộc chi nhánh mình
     if (req.user.role === "STAFF" && item.branch_id !== req.user.branch_id) {
       return res
         .status(403)
-        .json({ message: "Không có quyền xóa của chi nhánh khác" });
+        .json({ message: "No right to delete category of other branch" });
     }
 
     await db.query("DELETE FROM category WHERE category_id = ?", [id]);
-    return res.json({ message: "Xóa category thành công" });
+    return res.json({ message: "Category deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };

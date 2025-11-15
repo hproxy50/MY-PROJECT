@@ -27,16 +27,16 @@ function App() {
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
-      {/* <Route path="/checkout" element={<Checkout />} /> */}
-      <Route path="/history" element={<History />} />
-      <Route path="/payment-success" element={<PaymentResult />} />
-      <Route path="/payment-cancel" element={<PaymentResult />} />
+
       {/* CUSTOMER */}
       <Route path="/branches" element={<BranchSelectPage />} />
       <Route path="/menu/:branchId/:orderId" element={<Menu />} />
       <Route path="/cart/:orderId" element={<Cart />} />
       <Route path="/checkout/:orderId" element={<Checkout />} />
       <Route path="/rating/branch/:branch_id" element={<Rating />} />
+      <Route path="/history" element={<History />} />
+      <Route path="/payment-success" element={<PaymentResult />} />
+      <Route path="/payment-cancel" element={<PaymentResult />} />
 
       <Route
         path="/staff/*"

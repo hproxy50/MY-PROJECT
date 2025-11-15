@@ -16,6 +16,8 @@ export default function StaffMenu() {
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [formData, setFormData] = useState({
     name: "",
     price: "",
@@ -46,6 +48,12 @@ export default function StaffMenu() {
       console.error("Error loading category:", err);
     }
   };
+
+  const filteredMenu = menuItems.filter((item) => {
+    const matchName = item.name.toLowerCase().includes(searchText.toLowerCase());
+    const matchCategory = selectedCategory === "ALL" || String(item.category_id) === String(selectedCategory);
+    return matchName && matchCategory;
+  });
 
   useEffect(() => {
     fetchCategories();
@@ -283,28 +291,44 @@ export default function StaffMenu() {
     }
     return formData.image; // assumed already a full url string
   };
-  // END: Kết thúc phần copy logic
 
-  // THAY ĐỔI: Giao diện
   return (
     <>
       <Card className="shadow-sm">
         <Card.Header className="p-3">
           <Row className="justify-content-between align-items-center">
             <Col xs="auto">
-              <h3 className="mb-0">🍽️ Quản lý Menu</h3>
+              <h3 className="mb-0">Menu Management</h3>
             </Col>
             <Col xs="auto">
               <Button variant="primary" onClick={() => handleShowModal()}>
-                + Thêm món ăn
+                + Add new dishes
               </Button>
             </Col>
           </Row>
         </Card.Header>
         <Card.Body>
-          {/* THAY ĐỔI: Dùng <Table responsive>
-            Điều này sẽ tự động thêm thanh cuộn ngang trên màn hình nhỏ 
-          */}
+          <Col xs="4">
+            <Form.Control
+              type="text"
+              placeholder="Search by name"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </Col>
+          <Col xs="4">
+            <Form.Select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="ALL">All categories</option>
+              {categories.map((c) => (
+                <option key={c.category_id} value={c.category_id}>
+                  {c.food_type}
+                </option>
+              ))}
+            </Form.Select>
+          </Col>
           <Table striped bordered hover responsive className="align-middle">
             <thead className="table-light">
               <tr>
@@ -319,7 +343,7 @@ export default function StaffMenu() {
               </tr>
             </thead>
             <tbody>
-              {menuItems.map((item) => (
+              {filteredMenu.map((item) => (
                 <tr key={item.item_id}>
                   <td>
                     {item.image ? (

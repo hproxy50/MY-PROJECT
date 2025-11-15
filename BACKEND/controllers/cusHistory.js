@@ -75,83 +75,75 @@ export const getOrderHistory = async (req, res) => {
 };
 
 
-// POST /history/buy-again
-export const buyAgain = async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const { order_id } = req.body;
+// export const buyAgain = async (req, res) => {
+//   try {
+//     const userId = req.user.user_id;
+//     const { order_id } = req.body;
 
-    if (!order_id) {
-      return res.status(400).json({ message: "Missing order_id" });
-    }
+//     if (!order_id) {
+//       return res.status(400).json({ message: "Missing order_id" });
+//     }
 
-    // 1. Lấy chi tiết order gốc
-    const [orders] = await db.query(
-      "SELECT * FROM orders WHERE order_id = ? AND user_id = ?",
-      [order_id, userId]
-    );
-    if (orders.length === 0) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-    const order = orders[0];
+//     const [orders] = await db.query(
+//       "SELECT * FROM orders WHERE order_id = ? AND user_id = ?",
+//       [order_id, userId]
+//     );
+//     if (orders.length === 0) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+//     const order = orders[0];
 
-    // 2. Kiểm tra giỏ hàng DRAFT hiện tại
-    const [drafts] = await db.query(
-      "SELECT order_id FROM orders WHERE user_id=? AND branch_id=? AND status='DRAFT'",
-      [userId, order.branch_id]
-    );
+//     const [drafts] = await db.query(
+//       "SELECT order_id FROM orders WHERE user_id=? AND branch_id=? AND status='DRAFT'",
+//       [userId, order.branch_id]
+//     );
 
-    let draftOrderId;
-    if (drafts.length > 0) {
-      draftOrderId = drafts[0].order_id;
-      // Xóa hết item cũ trong giỏ DRAFT (nếu muốn reset)
-      await db.query("DELETE FROM order_items WHERE order_id=?", [draftOrderId]);
-    } else {
-      // tạo mới giỏ hàng DRAFT
-      const [result] = await db.query(
-        "INSERT INTO orders (user_id, branch_id, status, total_price, final_price, created_at) VALUES (?, ?, 'DRAFT', 0, 0, NOW())",
-        [userId, order.branch_id]
-      );
-      draftOrderId = result.insertId;
-    }
+//     let draftOrderId;
+//     if (drafts.length > 0) {
+//       draftOrderId = drafts[0].order_id;
+//       await db.query("DELETE FROM order_items WHERE order_id=?", [draftOrderId]);
+//     } else {
+//       const [result] = await db.query(
+//         "INSERT INTO orders (user_id, branch_id, status, total_price, final_price, created_at) VALUES (?, ?, 'DRAFT', 0, 0, NOW())",
+//         [userId, order.branch_id]
+//       );
+//       draftOrderId = result.insertId;
+//     }
 
-    // 3. Lấy tất cả items của order gốc
-    const [items] = await db.query(
-      "SELECT * FROM order_items WHERE order_id=?",
-      [order_id]
-    );
+//     const [items] = await db.query(
+//       "SELECT * FROM order_items WHERE order_id=?",
+//       [order_id]
+//     );
 
-    // 4. Thêm từng item vào giỏ hàng DRAFT
-    for (const item of items) {
-      await db.query(
-        `INSERT INTO order_items 
-        (order_id, item_id, quantity, unit_price, line_total, options, option_summary, options_hash, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [
-          draftOrderId,
-          item.item_id,
-          item.quantity,
-          item.unit_price,
-          item.line_total,
-          item.options ? JSON.stringify(item.options) : null,
-          item.option_summary ? JSON.stringify(item.option_summary) : null,
-          item.options_hash,
-        ]
-      );
-    }
+//     for (const item of items) {
+//       await db.query(
+//         `INSERT INTO order_items 
+//         (order_id, item_id, quantity, unit_price, line_total, options, option_summary, options_hash, created_at)
+//         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+//         [
+//           draftOrderId,
+//           item.item_id,
+//           item.quantity,
+//           item.unit_price,
+//           item.line_total,
+//           item.options ? JSON.stringify(item.options) : null,
+//           item.option_summary ? JSON.stringify(item.option_summary) : null,
+//           item.options_hash,
+//         ]
+//       );
+//     }
 
-    // 5. Cập nhật tổng tiền cho giỏ hàng DRAFT
-    await db.query(
-      `UPDATE orders 
-       SET total_price=(SELECT COALESCE(SUM(line_total),0) FROM order_items WHERE order_id=?),
-           final_price=(SELECT COALESCE(SUM(line_total),0) FROM order_items WHERE order_id=?)
-       WHERE order_id=?`,
-      [draftOrderId, draftOrderId, draftOrderId]
-    );
+//     await db.query(
+//       `UPDATE orders
+//        SET total_price=(SELECT COALESCE(SUM(line_total),0) FROM order_items WHERE order_id=?),
+//            final_price=(SELECT COALESCE(SUM(line_total),0) FROM order_items WHERE order_id=?)
+//        WHERE order_id=?`,
+//       [draftOrderId, draftOrderId, draftOrderId]
+//     );
 
-    return res.json({ message: "Added to cart", order_id: draftOrderId });
-  } catch (error) {
-    console.error("buyAgain error:", error);
-    return res.status(500).json({ message: "Server error", error });
-  }
-};
+//     return res.json({ message: "Added to cart", order_id: draftOrderId });
+//   } catch (error) {
+//     console.error("buyAgain error:", error);
+//     return res.status(500).json({ message: "Server error", error });
+//   }
+// };

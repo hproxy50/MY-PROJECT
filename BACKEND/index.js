@@ -18,6 +18,7 @@ import shipperOrderRoutes from "./routes/shipperOrderRoutes.js";
 import { upload } from "./middlewares/uploadMiddlewares.js";
 import cusHistoryRoutes from "./routes/cusHistoryRoutes.js"
 import ratingRoutes from "./routes/ratingRoutes.js"
+import dashboardRoutes from "./routes/dashboardRoutes.js"
 
 const app = express();
 
@@ -33,7 +34,6 @@ app.use("/uploads", express.static("uploads"));
 
 app.use(express.json());
 
-// simple health
 app.get("/", (req, res) => res.json({ status: "ok", time: new Date() }));
 
 app.use("/auth", authRoutes);
@@ -63,6 +63,8 @@ app.use("/shipper", shipperOrderRoutes);
 app.use("/history", cusHistoryRoutes);
 
 app.use("/ratings", ratingRoutes);
+
+app.use("/dashboard", dashboardRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

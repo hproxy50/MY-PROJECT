@@ -1,14 +1,13 @@
-console.log("--- ordersController.js ĐÃ ĐƯỢC TẢI (PHIÊN BẢN MỚI) ---");
+console.log("ordersController.js");
 import db from "../config/db.js";
 import payos from "../config/payos.js";
 
-// ================= LẤY DỮ LIỆU TRANG CHECKOUT =================
 export const getCheckoutInfo = async (req, res) => {
   try {
-    const { id } = req.params; // order_id
+    const { id } = req.params;
     const userId = req.user.user_id;
 
-    // Lấy order DRAFT của user
+    
     const [orders] = await db.query(
       `SELECT o.*, u.name AS user_name, u.phone AS user_phone, b.name AS branch_name, b.address AS branch_address
         FROM orders o
@@ -19,11 +18,11 @@ export const getCheckoutInfo = async (req, res) => {
     );
 
     if (orders.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy giỏ hàng DRAFT" });
+      return res.status(404).json({ message: "DRAFT cart not found" });
     }
     const order = orders[0];
 
-    // Lấy items
+    
     const [items] = await db.query(
       `SELECT oi.order_item_id, m.name, m.image, oi.quantity, oi.unit_price, oi.line_total, oi.option_summary
         FROM order_items oi
@@ -50,10 +49,9 @@ export const getCheckoutInfo = async (req, res) => {
   }
 };
 
-// ================= XÁC NHẬN ĐẶT ĐƠN =================
 export const confirmOrder = async (req, res) => {
   try {
-    const { id } = req.params; // order_id
+    const { id } = req.params; 
     const userId = req.user.user_id;
     const {
       customer_name,
@@ -65,7 +63,7 @@ export const confirmOrder = async (req, res) => {
       message,
     } = req.body;
 
-    // Validate order
+    
     const [orders] = await db.query(
       `SELECT * FROM orders WHERE order_id = ? AND user_id = ? AND status = 'DRAFT'`,
       [id, userId]
@@ -73,19 +71,19 @@ export const confirmOrder = async (req, res) => {
     if (orders.length === 0) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy giỏ hàng để xác nhận" });
+        .json({ message: "No shopping cart found to confirm" });
     }
 
-    // Validate dữ liệu theo order_type
+    
     if (order_type === "TAKEAWAY" && !scheduled_time) {
       return res
         .status(400)
-        .json({ message: "Vui lòng chọn giờ cho TAKEAWAY" });
+        .json({ message: "Please select a time for TAKEAWAY" });
     }
     if (order_type === "DELIVERY" && !delivery_address) {
       return res
         .status(400)
-        .json({ message: "Vui lòng nhập địa chỉ giao hàng" });
+        .json({ message: "Please enter shipping address" });
     }
 
     await db.query(
@@ -107,17 +105,15 @@ export const confirmOrder = async (req, res) => {
         id,
       ]
     );
-
-    return res.json({ message: "Xác nhận đặt đơn thành công", order_id: id });
+    return res.json({ message: "Confirm order successful", order_id: id });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ================= XÁC NHẬN ĐẶT ĐƠN QR =================
 export const confirmOrderQR = async (req, res) => {
   try {
-    const { id } = req.params; // order_id
+    const { id } = req.params;
     const userId = req.user.user_id;
     const {
       customer_name,
@@ -129,7 +125,7 @@ export const confirmOrderQR = async (req, res) => {
       message,
     } = req.body;
 
-    // Validate order
+    
     const [orders] = await db.query(
       `SELECT * FROM orders WHERE order_id = ? AND user_id = ? AND status = 'DRAFT'`,
       [id, userId]
@@ -140,7 +136,7 @@ export const confirmOrderQR = async (req, res) => {
         .json({ message: "No shopping cart found to confirm" });
     }
 
-    // Validate dữ liệu theo order_type
+    
     if (
       order_type === "TAKEAWAY" &&
       (!scheduled_time || scheduled_time.trim() === "")
@@ -182,7 +178,6 @@ export const confirmOrderQR = async (req, res) => {
   }
 };
 
-// ================ USE PROMOTION AND COUNTING PRICE ===========================
 
 export const applyPromotion = async (req, res) => {
   try {
@@ -190,16 +185,15 @@ export const applyPromotion = async (req, res) => {
     const { promo_id } = req.body;
     const userId = req.user.user_id;
 
-    // Lấy order
+    
     const [orders] = await db.query(
       `SELECT * FROM orders WHERE order_id=? AND user_id=? AND status='DRAFT'`,
       [id, userId]
     );
     if (orders.length === 0)
-      return res.status(404).json({ message: "Không tìm thấy order DRAFT" });
+      return res.status(404).json({ message: "Order DRAFT not found" });
     const order = orders[0];
 
-    // Lấy promo
     const [promos] = await db.query(
       `SELECT * FROM promotions 
         WHERE promo_id=? 
@@ -211,29 +205,26 @@ export const applyPromotion = async (req, res) => {
     if (promos.length === 0)
       return res
         .status(400)
-        .json({ message: "Mã giảm giá không hợp lệ hoặc đã hết hạn" });
+        .json({ message: "Invalid or expired coupon code" });
 
     const promo = promos[0];
 
-    // Tính giảm giá
     let discount = 0;
     if (promo.discount_type === "PERCENT") {
       discount = (order.total_price * promo.discount_value) / 100;
     } else if (promo.discount_type === "AMOUNT") {
       discount = promo.discount_value;
     }
-    if (discount > order.total_price) discount = order.total_price; // không âm
+    if (discount > order.total_price) discount = order.total_price;
 
     const finalPrice = order.total_price - discount;
 
-    // Update order
     await db.query(
       `UPDATE orders SET promo_id=?, discount_amount=?, final_price=? WHERE order_id=?`,
       [promo.promo_id, discount, finalPrice, id]
     );
 
     return res.json({
-      //message: "Discount code applied successfully",
       order_id: id,
       discount,
       total_price: order.total_price,
@@ -243,11 +234,10 @@ export const applyPromotion = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Lỗi server", error: err });
+    return res.status(500).json({ message: "Server error", error: err });
   }
 };
 
-// ================= TẠO THANH TOÁN BẰNG PAYOS =================
 export const createPayOSPayment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -280,7 +270,6 @@ export const createPayOSPayment = async (req, res) => {
   }
 };
 
-// ================= Webhook trả về của payos =================
 export const payOSWebhook = async (req, res) => {
   try {
     const data = req.body;
@@ -298,11 +287,11 @@ export const payOSWebhook = async (req, res) => {
     }
     console.log("Webhook signature VERIFIED");
 
-    // Lấy orderCode
+    
     const orderCode = data.data?.orderCode;
     console.log(`Extracted orderCode: [${orderCode}]`);
 
-    // Kiểm tra điều kiện thanh toán
+    
     if (data.code === "00" && data.success) {
       console.log(`SUCCESS condition met for order [${orderCode}].`);
 
@@ -384,7 +373,6 @@ export const payOSWebhook = async (req, res) => {
       );
       console.log(`Order [${orderCode}] set to CANCELLED.`);
     }
-
     res.json({ message: "Webhook processed" });
   } catch (err) {
     console.error("!!! CRITICAL WEBHOOK ERROR:", err);
@@ -392,7 +380,6 @@ export const payOSWebhook = async (req, res) => {
   }
 };
 
-// ================= HỦY ĐƠN HÀNG BỞI NGƯỜI DÙNG =================
 export const cancelOrderByUser = async (req, res) => {
   try {
     const { id } = req.params; // order_id
@@ -404,7 +391,6 @@ export const cancelOrderByUser = async (req, res) => {
       WHERE order_id=? AND user_id=? AND status='PENDING'`,
       [id, userId]
     );
-
     console.log(
       `User requested cancel for order ${id}. Rows affected: ${result.affectedRows}`
     );

@@ -1,31 +1,22 @@
 // staffOrdersController.js
 import db from "../config/db.js";
 
-/**
- * Middleware/Helper: kiểm tra role STAFF
- */
+
 const ensureStaff = (req, res) => {
   if (!req.user || req.user.role !== "STAFF") {
-    return res.status(403).json({ message: "Chỉ STAFF mới được truy cập" });
+    return res.status(403).json({ message: "Only staff access" });
   }
   if (!req.user.branch_id) {
-    return res.status(400).json({ message: "Nhân viên chưa gán branch_id" });
+    return res.status(400).json({ message: "Employee has not assigned branch_id" });
   }
   return null;
 };
 
-/**
- * GET /staff/orders
- * Lấy danh sách đơn PENDING cho branch của nhân viên
- *
- * TỐI ƯU: Đã loại bỏ phần truy vấn 'order_items'.
- * Giao diện danh sách không cần chi tiết món ăn, chỉ cần thông tin order.
- * Chi tiết món ăn sẽ được lấy riêng khi gọi getPendingOrderDetails (ấn "Xem").
- */
+
 export const getPendingOrdersForStaff = async (req, res) => {
   try {
     const err = ensureStaff(req, res);
-    if (err) return; // ensureStaff đã trả response
+    if (err) return;
 
     const branchId = req.user.branch_id;
 
@@ -42,7 +33,6 @@ export const getPendingOrdersForStaff = async (req, res) => {
       return res.json({ orders: [] });
     }
 
-    // Build response orders (đã bỏ items)
     const result = orders.map((o) => ({
       order_id: o.order_id,
       user_id: o.user_id,
@@ -51,26 +41,20 @@ export const getPendingOrdersForStaff = async (req, res) => {
         o.final_price !== null ? Number(o.final_price) : Number(o.total_price),
       customer_name: o.customer_name,
       customer_phone: o.customer_phone,
-      order_type: o.order_type, // 'DINE_IN' | 'DELIVERY' | 'TAKEAWAY'
+      order_type: o.order_type,
       scheduled_time: o.scheduled_time,
       delivery_address: o.order_type === "DELIVERY" ? o.delivery_address : null,
       message: o.message,
       created_at: o.created_at,
-      // items: [] // Không cần items ở danh sách
     }));
 
     return res.json({ orders: result });
   } catch (error) {
     console.error("getPendingOrdersForStaff error:", error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-/**
- * GET /staff/orders/:id
- * Lấy chi tiết 1 order pending (kiểm tra branch + status)
- * (Giữ nguyên, hàm này đã đúng)
- */
 export const getPendingOrderDetails = async (req, res) => {
   try {
     const err = ensureStaff(req, res);
@@ -79,22 +63,20 @@ export const getPendingOrderDetails = async (req, res) => {
     const branchId = req.user.branch_id;
     const orderId = Number(req.params.id);
 
-    // Lấy order và xác thực
     const [orders] = await db.query(
       `SELECT o.*, u.name AS user_name, u.phone AS user_phone
        FROM orders o
        LEFT JOIN users u ON o.user_id = u.user_id
-       WHERE o.order_id = ? AND o.branch_id = ? AND o.status = 'PENDING'`, // Chỉ cho xem chi tiết đơn PENDING
+       WHERE o.order_id = ? AND o.branch_id = ? AND o.status = 'PENDING'`, 
       [orderId, branchId]
     );
     if (!orders || orders.length === 0) {
       return res.status(404).json({
-        message: "Không tìm thấy order PENDING thuộc chi nhánh của bạn",
+        message: "No PENDING orders found for your branch",
       });
     }
     const order = orders[0];
 
-    // Lấy items
     const [items] = await db.query(
       `SELECT oi.order_item_id, oi.order_id, oi.item_id, m.name AS item_name, m.image AS item_image,
               oi.quantity, oi.unit_price, oi.line_total, oi.option_summary, oi.options
@@ -147,15 +129,11 @@ export const getPendingOrderDetails = async (req, res) => {
     return res.json(resp);
   } catch (error) {
     console.error("getPendingOrderDetails error:", error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-/**
- * POST /staff/orders/approve
- * Chuyển trạng thái từ PENDING -> PREPARING
- * (Giữ nguyên, hàm này đã đúng)
- */
+
 export const approveOrders = async (req, res) => {
   const err = ensureStaff(req, res);
   if (err) return;
@@ -163,7 +141,6 @@ export const approveOrders = async (req, res) => {
   const branchId = req.user.branch_id;
   let orderIds = [];
 
-  // 1. Lấy orderIds từ body (giữ nguyên)
   if (req.body.order_ids && Array.isArray(req.body.order_ids)) {
     orderIds = req.body.order_ids
       .map((i) => Number(i))
@@ -175,11 +152,10 @@ export const approveOrders = async (req, res) => {
 
   if (!orderIds || orderIds.length === 0) {
     return res.status(400).json({
-      message: "Vui lòng cung cấp order_id hoặc order_ids (mảng) hợp lệ",
+      message: "Please provide a valid order_id or order_ids",
     });
   }
 
-  // 2. Bắt đầu Transaction
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
@@ -201,10 +177,8 @@ export const approveOrders = async (req, res) => {
       [orderIds, branchId]
     );
 
-    // 4. Kiểm tra tồn kho (giữ nguyên)
     const insufficientStockItems = [];
     for (const item of itemsToUpdate) {
-      // Logic này giờ sẽ chạy cho TẤT CẢ các món
       if (item.current_stock < item.total_quantity_needed) {
         insufficientStockItems.push({
           name: item.item_name,
@@ -218,12 +192,11 @@ export const approveOrders = async (req, res) => {
     if (insufficientStockItems.length > 0) {
       await connection.rollback();
       return res.status(400).json({
-        message: "Không đủ tồn kho để duyệt đơn.",
+        message: "Insufficient inventory to process order",
         insufficient_items: insufficientStockItems,
       });
     }
 
-    // 5. Nếu đủ kho, tiến hành trừ kho (giữ nguyên)
     for (const item of itemsToUpdate) {
       await connection.query(
         `UPDATE menu_items
@@ -233,7 +206,6 @@ export const approveOrders = async (req, res) => {
       );
     }
 
-    // 6. Cập nhật is_available = 0 (giữ nguyên)
     const itemIdsToCheck = itemsToUpdate.map((i) => i.item_id);
     if (itemIdsToCheck.length > 0) {
       await connection.query(
@@ -244,7 +216,6 @@ export const approveOrders = async (req, res) => {
       );
     }
 
-    // 7. Cập nhật trạng thái đơn hàng (giữ nguyên)
     const [updateOrdersResult] = await connection.query(
       `UPDATE orders
        SET status = 'PREPARING'
@@ -254,21 +225,18 @@ export const approveOrders = async (req, res) => {
 
     const affectedOrders = updateOrdersResult.affectedRows ?? 0;
 
-    // 8. Commit Transaction
     await connection.commit();
 
     return res.json({
-      message: `Duyệt đơn và trừ kho thành công`,
+      message: `Order approved and warehouse deducted successfully`,
       requested: orderIds.length,
       updated_count: affectedOrders,
     });
   } catch (error) {
-    // 9. Rollback nếu có lỗi
     await connection.rollback();
     console.error("approveOrders error:", error);
-    return res.status(500).json({ message: "Lỗi server khi duyệt đơn", error });
+    return res.status(500).json({ message: "Server error when approving order", error });
   } finally {
-    // Luôn trả connection về pool
     connection.release();
   }
 };
@@ -281,7 +249,7 @@ export const cancelOrders = async (req, res) => {
     if (err) return;
 
     const branchId = req.user.branch_id;
-    let orderIds = []; // Lấy ID từ body (giống hệt approveOrders)
+    let orderIds = [];
 
     if (req.body.order_ids && Array.isArray(req.body.order_ids)) {
       orderIds = req.body.order_ids
@@ -294,9 +262,9 @@ export const cancelOrders = async (req, res) => {
 
     if (!orderIds || orderIds.length === 0) {
       return res.status(400).json({
-        message: "Vui lòng cung cấp order_id hoặc order_ids (mảng) hợp lệ",
+        message: "Please provide a valid order_id or order_ids",
       });
-    } // Cập nhật: chỉ update các order thuộc branch và status = 'PENDING'
+    }
 
     const [updateResult] = await db.query(
       `UPDATE orders
@@ -308,12 +276,12 @@ export const cancelOrders = async (req, res) => {
     const affected = updateResult.affectedRows ?? 0;
 
     return res.json({
-      message: `Hủy đơn thành công`,
+      message: `Cancel order successful`,
       requested: orderIds.length,
       updated_count: affected,
     });
   } catch (error) {
     console.error("cancelOrders error:", error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };

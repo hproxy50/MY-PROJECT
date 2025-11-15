@@ -1,23 +1,16 @@
-// shipperOrdersController.js
 import db from "../config/db.js";
 
-/**
- * Middleware/Helper: kiểm tra role SHIPPER
- */
 const ensureShipper = (req, res) => {
   if (!req.user || req.user.role !== "SHIPPER") {
-    return res.status(403).json({ message: "Chỉ SHIPPER mới được truy cập" });
+    return res.status(403).json({ message: "Only SHIPPER has access" });
   }
   if (!req.user.branch_id) {
-    return res.status(400).json({ message: "Nhân viên giao hàng chưa gán branch_id" });
+    return res.status(400).json({ message: "Delivery staff has not assigned branch_id" });
   }
   return null;
 };
 
-/**
- * GET /shipper/orders/delivery
- * Lấy danh sách đơn đang giao (DELIVERY) cho chi nhánh của shipper
- */
+
 export const getDeliveryOrdersForShipper = async (req, res) => {
   try {
     const err = ensureShipper(req, res);
@@ -78,7 +71,7 @@ export const getDeliveryOrdersForShipper = async (req, res) => {
       order_id: o.order_id,
       customer_name: o.customer_name,
       customer_phone: o.customer_phone,
-      order_type: o.order_type, // DELIVERY hoặc DINE_IN (nhận tại cửa hàng)
+      order_type: o.order_type,
       delivery_address: o.order_type === "DELIVERY" ? o.delivery_address : null,
       scheduled_time: o.scheduled_time,
       message: o.message,
@@ -91,14 +84,11 @@ export const getDeliveryOrdersForShipper = async (req, res) => {
     return res.json({ orders: result });
   } catch (error) {
     console.error("getDeliveryOrdersForShipper error:", error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-/**
- * GET /shipper/orders/:id
- * Lấy chi tiết 1 đơn DELIVERY cụ thể
- */
+
 export const getDeliveryOrderDetails = async (req, res) => {
   try {
     const err = ensureShipper(req, res);
@@ -115,7 +105,7 @@ export const getDeliveryOrderDetails = async (req, res) => {
     );
 
     if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy đơn DELIVERY thuộc chi nhánh của bạn" });
+      return res.status(404).json({ message: "No DELIVERY order found for your branch" });
     }
 
     const order = orders[0];
@@ -165,15 +155,11 @@ export const getDeliveryOrderDetails = async (req, res) => {
     return res.json(resp);
   } catch (error) {
     console.error("getDeliveryOrderDetails error:", error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };
 
-/**
- * POST /shipper/orders/complete
- * Body: { order_ids: [1,2,3] } hoặc { order_id: 1 }
- * Cập nhật trạng thái từ DELIVERY -> COMPLETED
- */
+
 export const completeOrders = async (req, res) => {
   try {
     const err = ensureShipper(req, res);
@@ -190,7 +176,7 @@ export const completeOrders = async (req, res) => {
     }
 
     if (!orderIds || orderIds.length === 0) {
-      return res.status(400).json({ message: "Vui lòng cung cấp order_id hoặc order_ids hợp lệ" });
+      return res.status(400).json({ message: "Please provide a valid order_id or order_ids" });
     }
 
     const [updateResult] = await db.query(
@@ -199,6 +185,7 @@ export const completeOrders = async (req, res) => {
        WHERE order_id IN (?) AND branch_id = ? AND status = 'DELIVERY'`,
       [orderIds, branchId]
     );
+
 
     const affected = updateResult.affectedRows ?? 0;
 
@@ -210,13 +197,13 @@ export const completeOrders = async (req, res) => {
     const updatedIds = updatedOrders.map((r) => r.order_id);
 
     return res.json({
-      message: "Cập nhật đơn hàng thành công (DELIVERY → COMPLETED)",
+      message: "Order update successful (DELIVERY → COMPLETED)",
       requested: orderIds.length,
       updated_count: affected,
       updated_ids: updatedIds,
     });
   } catch (error) {
     console.error("completeOrders error:", error);
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Server error", error });
   }
 };

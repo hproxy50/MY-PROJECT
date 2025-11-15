@@ -123,16 +123,16 @@ export default function History() {
     }
   };
 
-  const handleBuyAgain = async (orderId) => {
-    try {
-      const res = await API.post("/history/buy-again", { order_id: orderId });
-      const draftOrderId = res.data.order_id;
-      navigate(`/cart/${draftOrderId}`);
-    } catch (err) {
-      console.error("Buy again error:", err);
-      alert(err.response?.data?.message || "Cannot add to cart");
-    }
-  };
+  // const handleBuyAgain = async (orderId) => {
+  //   try {
+  //     const res = await API.post("/history/buy-again", { order_id: orderId });
+  //     const draftOrderId = res.data.order_id;
+  //     navigate(`/cart/${draftOrderId}`);
+  //   } catch (err) {
+  //     console.error("Buy again error:", err);
+  //     alert(err.response?.data?.message || "Cannot add to cart");
+  //   }
+  // };
 
   const handleToggleBranchView = () => {
     setShowAllBranches((prev) => !prev);
@@ -287,7 +287,7 @@ export default function History() {
                   <p>: {Number(order.final_price).toLocaleString("vi-VN")}đ</p>
                 </div>
                 <div className="History-product-button">
-                  {["COMPLETED", "CANCELED"].includes(
+                  {/* {["COMPLETED", "CANCELED"].includes(
                     order.status.toUpperCase()
                   ) && (
                     <button
@@ -296,7 +296,7 @@ export default function History() {
                     >
                       Buy again!
                     </button>
-                  )}
+                  )} */}
                   {order.status.toUpperCase() === "COMPLETED" && (
                     <button
                       className="History-product-button-rating"

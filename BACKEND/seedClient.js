@@ -10,7 +10,7 @@ async function createCustomer() {
   try {
     const email = "Customer2@gmail.com";
     const name = "Customer2";
-    const password = "123"; // sau khi chạy hãy đổi mật khẩu
+    const password = "123"; 
     const phone = null;
 
     const [exists] = await pool.execute("SELECT user_id FROM users WHERE email = ?", [email]);

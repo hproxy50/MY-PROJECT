@@ -31,21 +31,19 @@ const formatDateForInput = (dateStr) => {
 };
 
 export default function AdminPromotion() {
-  const [promotions, setPromotions] = useState([]); // Danh sách gốc
-  const [filteredPromotions, setFilteredPromotions] = useState([]); // Danh sách đã lọc
-  const [branches, setBranches] = useState([]); // Danh sách chi nhánh
+  const [promotions, setPromotions] = useState([]);
+  const [filteredPromotions, setFilteredPromotions] = useState([]);
+  const [branches, setBranches] = useState([]);
 
-  // --- STATE GIAO DIỆN ---
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [feedback, setFeedback] = useState(null); // Thông báo thành công/lỗi
-  const [selectedBranchFilter, setSelectedBranchFilter] = useState(""); // State cho bộ lọc chi nhánh
+  const [feedback, setFeedback] = useState(null);
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState("");
 
-  // --- STATE MODAL ---
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentPromo, setCurrentPromo] = useState(null); // Promotion đang sửa/xóa
-
+  const [currentPromo, setCurrentPromo] = useState(null);
+  
   // --- STATE MODAL XÓA ---
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -86,11 +84,9 @@ export default function AdminPromotion() {
     fetchData();
   }, []);
 
-  // --- 2. XỬ LÝ LỌC DỮ LIỆU ---
   useEffect(() => {
     let filtered = [...promotions];
 
-    // Lọc theo chi nhánh
     if (selectedBranchFilter) {
       filtered = filtered.filter(
         (promo) => promo.branch_id === parseInt(selectedBranchFilter)
@@ -98,9 +94,8 @@ export default function AdminPromotion() {
     }
 
     setFilteredPromotions(filtered);
-  }, [promotions, selectedBranchFilter]); // Chạy lại khi danh sách gốc hoặc bộ lọc thay đổi
+  }, [promotions, selectedBranchFilter]);
 
-  // --- 3. XỬ LÝ MODAL ---
   const handleCloseModal = () => {
     setShowModal(false);
     setIsEditing(false);
