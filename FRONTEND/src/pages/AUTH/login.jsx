@@ -70,6 +70,10 @@ export default function Login() {
           />
         </div>
 
+        <div className="mb-3 text-end">
+          <Link to="/forgot-password">Quên mật khẩu?</Link>
+        </div>
+
         <button type="submit" className="btn btn-primary w-100">
           Đăng nhập
         </button>

@@ -14,6 +14,8 @@ import PaymentResult from "./pages/CUSTOMER/PaymentResult";
 import Rating from "./pages/CUSTOMER/Rating";
 import Chef from "./pages/CHEF/Chef.jsx";
 import Shipper from "./pages/SHIPPER/Shipper.jsx"
+import ForgotPassword from "./components/ForgotPassword.jsx";
+import ResetPassword from "./components/ResetPassword.jsx";
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       {/* <Route path="/checkout" element={<Checkout />} /> */}
       <Route path="/history" element={<History />} />
       <Route path="/payment-success" element={<PaymentResult />} />
