@@ -14,11 +14,17 @@ import { Routes, Route, Link } from "react-router-dom";
 import AdminStaffCRUD from "./AdminStaffCRUD";
 import AdminBranches from "./AdminBranches";
 import AdminPromtion from "./AdminPromotion";
+import AdminStat from "./AdminStat";
 
 function SidebarContent({ onLinkClick }) {
   return (
     <Nav className="flex-column">
-      <Nav.Link as={Link} to="#" className="text-white" onClick={onLinkClick}>
+      <Nav.Link
+        as={Link}
+        to="/admin/adminStat"
+        className="text-white"
+        onClick={onLinkClick}
+      >
         Dashboard
       </Nav.Link>
       <Nav.Link
@@ -119,6 +125,7 @@ export default function StaffDashboard() {
               <Route path="staffCRUD" element={<AdminStaffCRUD />} />
               <Route path="adminBranches" element={<AdminBranches />} />
               <Route path="adminPromotion" element={<AdminPromtion />} />
+              <Route path="adminStat" element={<AdminStat />} />
             </Routes>
           </Col>
         </Row>

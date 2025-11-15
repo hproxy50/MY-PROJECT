@@ -160,7 +160,7 @@ export const getStaffDashboardSummary = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Lỗi khi lấy dữ liệu summary dashboard:", error);
-    res.status(500).json({ message: "Lỗi máy chủ" });
+    console.error("Error when retrieving summary dashboard data:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

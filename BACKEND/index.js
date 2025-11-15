@@ -19,6 +19,7 @@ import { upload } from "./middlewares/uploadMiddlewares.js";
 import cusHistoryRoutes from "./routes/cusHistoryRoutes.js"
 import ratingRoutes from "./routes/ratingRoutes.js"
 import dashboardRoutes from "./routes/dashboardRoutes.js"
+import adminDashboardRoutes from "./routes/adminDashboardRoutes.js"
 
 const app = express();
 
@@ -65,6 +66,8 @@ app.use("/history", cusHistoryRoutes);
 app.use("/ratings", ratingRoutes);
 
 app.use("/dashboard", dashboardRoutes);
+
+app.use("/admin-dashboard", adminDashboardRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
