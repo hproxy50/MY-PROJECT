@@ -5,11 +5,12 @@ const ensureShipper = (req, res) => {
     return res.status(403).json({ message: "Only SHIPPER has access" });
   }
   if (!req.user.branch_id) {
-    return res.status(400).json({ message: "Delivery staff has not assigned branch_id" });
+    return res
+      .status(400)
+      .json({ message: "Delivery staff has not assigned branch_id" });
   }
   return null;
 };
-
 
 export const getDeliveryOrdersForShipper = async (req, res) => {
   try {
@@ -22,9 +23,12 @@ export const getDeliveryOrdersForShipper = async (req, res) => {
       `SELECT o.order_id, o.customer_name, o.customer_phone, o.order_type,
               o.delivery_address, o.scheduled_time, o.message,
               o.total_price, o.final_price, o.created_at
-       FROM orders o
-       WHERE o.branch_id = ? AND o.status = 'DELIVERY'
-       ORDER BY o.created_at ASC`,
+      FROM orders o
+      WHERE o.branch_id = ? AND o.status = 'DELIVERY'
+      ORDER BY
+        CASE WHEN o.scheduled_time IS NULL THEN 1 ELSE 0 END,
+        o.scheduled_time ASC,
+        o.created_at ASC`,
       [branchId]
     );
 
@@ -76,7 +80,8 @@ export const getDeliveryOrdersForShipper = async (req, res) => {
       scheduled_time: o.scheduled_time,
       message: o.message,
       total_price: Number(o.total_price),
-      final_price: o.final_price !== null ? Number(o.final_price) : Number(o.total_price),
+      final_price:
+        o.final_price !== null ? Number(o.final_price) : Number(o.total_price),
       created_at: o.created_at,
       items: itemsByOrder[o.order_id] || [],
     }));
@@ -87,7 +92,6 @@ export const getDeliveryOrdersForShipper = async (req, res) => {
     return res.status(500).json({ message: "Server error", error });
   }
 };
-
 
 export const getDeliveryOrderDetails = async (req, res) => {
   try {
@@ -105,7 +109,9 @@ export const getDeliveryOrderDetails = async (req, res) => {
     );
 
     if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: "No DELIVERY order found for your branch" });
+      return res
+        .status(404)
+        .json({ message: "No DELIVERY order found for your branch" });
     }
 
     const order = orders[0];
@@ -143,11 +149,15 @@ export const getDeliveryOrderDetails = async (req, res) => {
       customer_name: order.customer_name,
       customer_phone: order.customer_phone,
       order_type: order.order_type,
-      delivery_address: order.order_type === "DELIVERY" ? order.delivery_address : null,
+      delivery_address:
+        order.order_type === "DELIVERY" ? order.delivery_address : null,
       scheduled_time: order.scheduled_time,
       message: order.message || null,
       total_price: Number(order.total_price),
-      final_price: order.final_price !== null ? Number(order.final_price) : Number(order.total_price),
+      final_price:
+        order.final_price !== null
+          ? Number(order.final_price)
+          : Number(order.total_price),
       created_at: order.created_at,
       items: parsedItems,
     };
@@ -159,7 +169,6 @@ export const getDeliveryOrderDetails = async (req, res) => {
   }
 };
 
-
 export const completeOrders = async (req, res) => {
   try {
     const err = ensureShipper(req, res);
@@ -169,14 +178,18 @@ export const completeOrders = async (req, res) => {
     let orderIds = [];
 
     if (req.body.order_ids && Array.isArray(req.body.order_ids)) {
-      orderIds = req.body.order_ids.map((i) => Number(i)).filter((n) => Number.isInteger(n));
+      orderIds = req.body.order_ids
+        .map((i) => Number(i))
+        .filter((n) => Number.isInteger(n));
     } else if (req.body.order_id) {
       const id = Number(req.body.order_id);
       if (Number.isInteger(id)) orderIds = [id];
     }
 
     if (!orderIds || orderIds.length === 0) {
-      return res.status(400).json({ message: "Please provide a valid order_id or order_ids" });
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid order_id or order_ids" });
     }
 
     const [updateResult] = await db.query(
@@ -185,7 +198,6 @@ export const completeOrders = async (req, res) => {
        WHERE order_id IN (?) AND branch_id = ? AND status = 'DELIVERY'`,
       [orderIds, branchId]
     );
-
 
     const affected = updateResult.affectedRows ?? 0;
 
@@ -204,6 +216,49 @@ export const completeOrders = async (req, res) => {
     });
   } catch (error) {
     console.error("completeOrders error:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const cancelOrdersForShipper = async (req, res) => {
+  try {
+    const err = ensureShipper(req, res);
+    if (err) return;
+
+    const branchId = req.user.branch_id;
+    let orderIds = [];
+
+    if (req.body.order_ids && Array.isArray(req.body.order_ids)) {
+      orderIds = req.body.order_ids
+        .map((i) => Number(i))
+        .filter((n) => Number.isInteger(n));
+    } else if (req.body.order_id) {
+      const id = Number(req.body.order_id);
+      if (Number.isInteger(id)) orderIds = [id];
+    }
+
+    if (!orderIds || orderIds.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid order_id or order_ids" });
+    }
+
+    const [updateResult] = await db.query(
+      `UPDATE orders
+      SET status = 'CANCELED'
+      WHERE order_id IN (?) AND branch_id = ? AND status = 'DELIVERY'`,
+      [orderIds, branchId]
+    );
+
+    const affected = updateResult.affectedRows ?? 0;
+
+    return res.json({
+      message: "Order canceled successfully (DELIVERY -> CANCELED)",
+      requested: orderIds.length,
+      updated_count: affected,
+    });
+  } catch (error) {
+    console.error("cancelOrdersForShipper error:", error);
     return res.status(500).json({ message: "Server error", error });
   }
 };

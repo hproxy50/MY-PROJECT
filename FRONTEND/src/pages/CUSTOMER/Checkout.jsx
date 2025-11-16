@@ -15,11 +15,9 @@ export default function Checkout() {
   const { orderId } = useParams();
   const [promos, setPromos] = useState([]);
   const [selectedPromo, setSelectedPromo] = useState(null);
-
   const [checkoutData, setCheckoutData] = useState(null);
   const [CustomerName, setCustomerName] = useState("");
   const [CustomerPhone, setCustomerPhone] = useState("");
-
   const [form, setForm] = useState({
     customer_name: "",
     customer_phone: "",
@@ -35,6 +33,8 @@ export default function Checkout() {
   });
 
   const token = localStorage.getItem("token");
+
+  const [timeOptions, setTimeOptions] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,9 +62,33 @@ export default function Checkout() {
     if (orderId) fetchData();
   }, [orderId, token]);
 
+  useEffect(() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const startHour = Math.max(8, currentHour + 1);
+    const endHour = 20;
+    const options = [];
+    if (startHour <= endHour) {
+      for (let hour = startHour; hour <= endHour; hour++) {
+        options.push(hour);
+      }
+    }
+
+    setTimeOptions(options);
+  }, []);
+
+  function getHourFromState(isoString) {
+    if (!isoString) return "";
+    try {
+      const date = new Date(isoString);
+      return date.getHours();
+    } catch (e) {
+      return "";
+    }
+  }
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "customer_phone") {
       if (/^[0-9]*$/.test(value) && value.length <= 10) {
         setForm({ ...form, [name]: value });
@@ -81,14 +105,12 @@ export default function Checkout() {
         navigate("/");
         return;
       }
-
       const currentBranchId = checkoutData.branch.id;
       const response = await API.post(
         "/cart",
         { branch_id: currentBranchId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       const newOrderId = response.data?.order_id;
       if (newOrderId && currentBranchId) {
         console.log(`Navigating to /menu/${currentBranchId}/${newOrderId}`);
@@ -108,10 +130,12 @@ export default function Checkout() {
       alert("Please enter recipient name");
       return;
     }
+
     if (!form.customer_phone || !form.customer_phone.trim()) {
       alert("Please enter recipient phone");
       return;
     }
+
     if (!form.scheduled_time || !form.scheduled_time.trim()) {
       const message =
         deliveryMethod === "pickup"
@@ -129,6 +153,7 @@ export default function Checkout() {
         return;
       }
     }
+
     try {
       const delivery_address =
         `${form.street}, ${form.ward}, ${form.district}`.trim();
@@ -140,19 +165,17 @@ export default function Checkout() {
             ? form.messageStore
             : form.messageDelivery,
       };
+
       await API.post(`/orders/${orderId}/confirm`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const response = await API.post(
         "/cart",
         { branch_id: checkoutData.branch.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       const newOrderId = response.data?.order_id;
       const currentBranchId = checkoutData.branch.id;
-
       if (newOrderId && currentBranchId) {
         console.log(
           `Cash order confirmed. Redirecting to /menu/${currentBranchId}/${newOrderId}`
@@ -165,6 +188,7 @@ export default function Checkout() {
     } catch (err) {
       if (err.response && err.response.status === 409) {
         alert(err.response.data.message);
+
         await navigateToMenuWithNewCart();
       } else {
         alert(err.response?.data?.message || "err order");
@@ -181,6 +205,7 @@ export default function Checkout() {
       alert("Please enter recipient phone");
       return false;
     }
+
     if (!form.scheduled_time || !form.scheduled_time.trim()) {
       const message =
         deliveryMethod === "pickup"
@@ -201,7 +226,6 @@ export default function Checkout() {
     try {
       const delivery_address =
         `${form.street}, ${form.ward}, ${form.district}`.trim();
-
       const payload = {
         ...form,
         delivery_address,
@@ -210,7 +234,6 @@ export default function Checkout() {
             ? form.messageStore
             : form.messageDelivery,
       };
-
       await API.post(`/orders/${orderId}/confirmQR`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -226,32 +249,12 @@ export default function Checkout() {
     }
   };
 
-  function getCurrentDateTimeLocal() {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-  }
-
-  const [minDateTime] = useState(getCurrentDateTimeLocal());
-
-  //
-  // function handleTimeChange(e) {
-  //   const selectedDate = new Date(e.target.value);
-  //   const hour = selectedDate.getHours();
-
-  //   if (hour < 8 || hour >= 22) {
-  //     alert("Please select delivery time from 08:00 to 22:00.");
-  //     e.target.value = "";
-  //   }
-  // }
-
   useEffect(() => {
     const fetchPromos = async () => {
       try {
         const res = await API.get(`/promotion`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         const available = res.data.filter(
           (p) =>
             p.branch_id === checkoutData.branch.id &&
@@ -265,9 +268,7 @@ export default function Checkout() {
     };
     if (checkoutData) fetchPromos();
   }, [checkoutData]);
-
   if (!checkoutData) return <p>Loading...</p>;
-
   return (
     <>
       <HeaderStatus branchId={checkoutData.branch.id} orderId={orderId} />
@@ -372,42 +373,31 @@ export default function Checkout() {
                           Today, "
                           {new Date().toLocaleDateString("en-GB", {
                             day: "2-digit",
+
                             month: "long",
                           })}
                           ", at
                         </p>
                         <div className="input-group">
-                          <input
-                            type="time"
+                          <select
                             name="scheduled_time"
                             className="form-control"
-                            min="08:00"
-                            max="22:00"
-                            value={
-                              form.scheduled_time
-                                ? new Date(
-                                    form.scheduled_time
-                                  ).toLocaleTimeString("en-GB", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                : ""
-                            }
+                            value={getHourFromState(form.scheduled_time)}
                             onChange={(e) => {
-                              const selectedTime = e.target.value;
-                              const now = new Date();
-                              const [hour, minute] = selectedTime
-                                .split(":")
-                                .map(Number);
-                              const selectedDate = new Date(); // hôm nay
-                              selectedDate.setHours(hour, minute, 0, 0);
-
-                              // if (selectedDate < now) {
-                              //   alert("Please select a time in the future");
-                              //   return;
-                              // }
-
-                              
+                              const selectedHour = e.target.value;
+                              if (!selectedHour) {
+                                handleChange({
+                                  target: { name: "scheduled_time", value: "" },
+                                });
+                                return;
+                              }
+                              const selectedDate = new Date();
+                              selectedDate.setHours(
+                                parseInt(selectedHour, 10),
+                                0,
+                                0,
+                                0
+                              );
                               const year = selectedDate.getFullYear();
                               const month = String(
                                 selectedDate.getMonth() + 1
@@ -415,9 +405,8 @@ export default function Checkout() {
                               const day = String(
                                 selectedDate.getDate()
                               ).padStart(2, "0");
-                              const h = String(hour).padStart(2, "0");
-                              const m = String(minute).padStart(2, "0");
-                              const formatted = `${year}-${month}-${day}T${h}:${m}:00`;
+                              const h = String(selectedHour).padStart(2, "0");
+                              const formatted = `${year}-${month}-${day}T${h}:00:00`;
                               handleChange({
                                 target: {
                                   name: "scheduled_time",
@@ -425,7 +414,20 @@ export default function Checkout() {
                                 },
                               });
                             }}
-                          />
+                          >
+                            <option value="">-- Select time --</option>
+                            {timeOptions.length > 0 ? (
+                              timeOptions.map((hour) => (
+                                <option key={hour} value={hour}>
+                                  {`${String(hour).padStart(2, "0")}:00`}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="" disabled>
+                                Today's booking time is over (8:00 - 20:00)
+                              </option>
+                            )}
+                          </select>
                         </div>
                       </div>
                     </div>
@@ -536,36 +538,25 @@ export default function Checkout() {
                         ", at
                       </p>
                       <div className="input-group">
-                        <input
-                          type="time"
+                        <select
                           name="scheduled_time"
                           className="form-control"
-                          min="08:00"
-                          max="22:00"
-                          value={
-                            form.scheduled_time
-                              ? new Date(
-                                  form.scheduled_time
-                                ).toLocaleTimeString("en-GB", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : ""
-                          }
+                          value={getHourFromState(form.scheduled_time)}
                           onChange={(e) => {
-                            const selectedTime = e.target.value;
-                            const now = new Date();
-                            const [hour, minute] = selectedTime
-                              .split(":")
-                              .map(Number);
+                            const selectedHour = e.target.value;
+                            if (!selectedHour) {
+                              handleChange({
+                                target: { name: "scheduled_time", value: "" },
+                              });
+                              return;
+                            }
                             const selectedDate = new Date();
-                            selectedDate.setHours(hour, minute, 0, 0);
-
-                            // if (selectedDate < now) {
-                            //   alert("Please select a time in the future");
-                            //   return;
-                            // }
-
+                            selectedDate.setHours(
+                              parseInt(selectedHour, 10),
+                              0,
+                              0,
+                              0
+                            );
                             const year = selectedDate.getFullYear();
                             const month = String(
                               selectedDate.getMonth() + 1
@@ -574,9 +565,8 @@ export default function Checkout() {
                               2,
                               "0"
                             );
-                            const h = String(hour).padStart(2, "0");
-                            const m = String(minute).padStart(2, "0");
-                            const formatted = `${year}-${month}-${day}T${h}:${m}:00`;
+                            const h = String(selectedHour).padStart(2, "0");
+                            const formatted = `${year}-${month}-${day}T${h}:00:00`;
                             handleChange({
                               target: {
                                 name: "scheduled_time",
@@ -584,7 +574,20 @@ export default function Checkout() {
                               },
                             });
                           }}
-                        />
+                        >
+                          <option value="">-- Select time --</option>
+                          {timeOptions.length > 0 ? (
+                            timeOptions.map((hour) => (
+                              <option key={hour} value={hour}>
+                                {`${String(hour).padStart(2, "0")}:00`}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="" disabled>
+                              Today's booking time is over (8:00 - 20:00)
+                            </option>
+                          )}
+                        </select>
                       </div>
                     </div>
                   </div>

@@ -92,7 +92,7 @@ $box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
     .filter-controls {
       display: flex;
-      gap: 12px; // Khoảng cách giữa 2 select
+      gap: 12px; 
 
       select {
         padding: 8px 12px;
@@ -104,15 +104,13 @@ $box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
   }
 
-  /* COMMENT: Danh sách các thẻ review */
   .review-list {
     display: flex;
     flex-direction: column;
-    gap: 20px; // Khoảng cách giữa các review
+    gap: 20px;
   }
 }
 
-/* COMMENT: CSS cho từng thẻ review (ReviewCard) */
 .review-card {
   background-color: $background-white;
   border: 1px solid $border-color;

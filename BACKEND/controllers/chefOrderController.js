@@ -18,7 +18,7 @@ export const getPreparingOrdersForChef = async (req, res) => {
     const branchId = req.user.branch_id;
 
     const [orders] = await db.query(
-      `SELECT o.order_id, o.scheduled_time, o.created_at
+      `SELECT o.order_id, o.scheduled_time, o.created_at, o.order_type, o.message
        FROM orders o
        WHERE o.branch_id = ? AND o.status = 'PREPARING'
        ORDER BY o.created_at ASC`,
@@ -64,6 +64,8 @@ export const getPreparingOrdersForChef = async (req, res) => {
       order_id: o.order_id,
       scheduled_time: o.scheduled_time,
       created_at: o.created_at,
+      order_type: o.order_type,
+      message: o.message,
       items: itemsByOrder[o.order_id] || [],
     }));
 
@@ -83,14 +85,18 @@ export const approveOrdersForChef = async (req, res) => {
     let orderIds = [];
 
     if (req.body.order_ids && Array.isArray(req.body.order_ids)) {
-      orderIds = req.body.order_ids.map((id) => Number(id)).filter(Number.isInteger);
+      orderIds = req.body.order_ids
+        .map((id) => Number(id))
+        .filter(Number.isInteger);
     } else if (req.body.order_id) {
       const id = Number(req.body.order_id);
       if (Number.isInteger(id)) orderIds = [id];
     }
 
     if (!orderIds.length) {
-      return res.status(400).json({ message: "Please provide a valid order_id or order_ids" });
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid order_id or order_ids" });
     }
 
     const [updateResult] = await db.query(
@@ -117,6 +123,49 @@ export const approveOrdersForChef = async (req, res) => {
     });
   } catch (error) {
     console.error("approveOrdersForChef error:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const cancelOrdersForChef = async (req, res) => {
+  try {
+    const err = ensureChef(req, res);
+    if (err) return;
+
+    const branchId = req.user.branch_id;
+    let orderIds = [];
+
+    if (req.body.order_ids && Array.isArray(req.body.order_ids)) {
+      orderIds = req.body.order_ids
+        .map((i) => Number(i))
+        .filter((n) => Number.isInteger(n));
+    } else if (req.body.order_id) {
+      const id = Number(req.body.order_id);
+      if (Number.isInteger(id)) orderIds = [id];
+    }
+
+    if (!orderIds || orderIds.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid order_id or order_ids" });
+    }
+
+    const [updateResult] = await db.query(
+      `UPDATE orders
+       SET status = 'CANCELED'
+       WHERE order_id IN (?) AND branch_id = ? AND status = 'PREPARING'`,
+      [orderIds, branchId]
+    );
+
+    const affected = updateResult.affectedRows ?? 0;
+
+    return res.json({
+      message: "Order canceled successfully (PREPARING -> CANCELED)",
+      requested: orderIds.length,
+      updated_count: affected,
+    });
+  } catch (error) {
+    console.error("cancelOrdersForChef error:", error);
     return res.status(500).json({ message: "Server error", error });
   }
 };
