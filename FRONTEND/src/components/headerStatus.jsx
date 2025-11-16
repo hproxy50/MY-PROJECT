@@ -64,7 +64,7 @@ const Header = ({ orderId, cartCount, branchId }) => {
         </div>
         <div className="header-Bottom-Right">
           <Phone className="PhoneIcon" alt="Phone" color="black" size={20} />
-          <p>1234567890</p>
+          <p>0584299322</p>
         </div>
       </div>
     </header>

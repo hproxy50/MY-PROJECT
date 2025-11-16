@@ -63,25 +63,71 @@ export default function Checkout() {
   }, [orderId, token]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "customer_phone") {
+      if (/^[0-9]*$/.test(value) && value.length <= 10) {
+        setForm({ ...form, [name]: value });
+      }
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+  };
+
+  const navigateToMenuWithNewCart = async () => {
+    try {
+      if (!checkoutData || !checkoutData.branch || !checkoutData.branch.id) {
+        console.error("Missing branch data to create new cart.");
+        navigate("/");
+        return;
+      }
+
+      const currentBranchId = checkoutData.branch.id;
+      const response = await API.post(
+        "/cart",
+        { branch_id: currentBranchId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const newOrderId = response.data?.order_id;
+      if (newOrderId && currentBranchId) {
+        console.log(`Navigating to /menu/${currentBranchId}/${newOrderId}`);
+        navigate(`/menu/${currentBranchId}/${newOrderId}`);
+      } else {
+        console.error("Failed to create new cart after order.");
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("Failed to create new cart:", err);
+      navigate("/");
+    }
   };
 
   const handleConfirm = async () => {
-    if (
-      deliveryMethod === "pickup" &&
-      (!form.scheduled_time || !form.scheduled_time.trim())
-    ) {
-      alert("Please select the time you will come");
+    if (!form.customer_name || !form.customer_name.trim()) {
+      alert("Please enter recipient name");
       return;
     }
-    if (
-      deliveryMethod === "delivery" &&
-      (!form.ward.trim() || !form.street.trim())
-    ) {
-      alert(
-        "Please fill in full ward/commune information and house number/street name."
-      );
+    if (!form.customer_phone || !form.customer_phone.trim()) {
+      alert("Please enter recipient phone");
       return;
+    }
+    if (!form.scheduled_time || !form.scheduled_time.trim()) {
+      const message =
+        deliveryMethod === "pickup"
+          ? "Please select the time you will come"
+          : "Please select desired delivery time";
+      alert(message);
+      return;
+    }
+
+    if (deliveryMethod === "delivery") {
+      if (!form.ward.trim() || !form.street.trim()) {
+        alert(
+          "Please fill in full ward/commune information and house number/street name."
+        );
+        return;
+      }
     }
     try {
       const delivery_address =
@@ -103,9 +149,8 @@ export default function Checkout() {
         { branch_id: checkoutData.branch.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
 
-      const newOrderId = response.data?.order_id; 
+      const newOrderId = response.data?.order_id;
       const currentBranchId = checkoutData.branch.id;
 
       if (newOrderId && currentBranchId) {
@@ -118,41 +163,41 @@ export default function Checkout() {
         navigate("/");
       }
     } catch (err) {
-      alert(err.response?.data?.message || "err order");
+      if (err.response && err.response.status === 409) {
+        alert(err.response.data.message);
+        await navigateToMenuWithNewCart();
+      } else {
+        alert(err.response?.data?.message || "err order");
+      }
     }
   };
-  
+
   const handleConfirmQR = async () => {
-    if (deliveryMethod === "pickup") {
-      if (!form.scheduled_time.trim()) {
-        alert("Please select the time you will come");
-        return false;
-      }
+    if (!form.customer_name || !form.customer_name.trim()) {
+      alert("Please enter recipient name");
+      return false;
+    }
+    if (!form.customer_phone || !form.customer_phone.trim()) {
+      alert("Please enter recipient phone");
+      return false;
+    }
+    if (!form.scheduled_time || !form.scheduled_time.trim()) {
+      const message =
+        deliveryMethod === "pickup"
+          ? "Please select the time you will come"
+          : "Please select desired delivery time";
+      alert(message);
+      return false;
     }
 
     if (deliveryMethod === "delivery") {
-      if (!form.customer_phone.trim()) {
-        alert("Please enter recipient phone");
-        return false;
-      }
-      if (!form.customer_name.trim()) {
-        alert("Please enter recipient name");
-        return false;
-      }
-      if (!form.ward.trim()) {
-        alert("Please enter ward/commune");
-        return false;
-      }
-      if (!form.street.trim()) {
-        alert("Please enter house number/street name");
-        return false;
-      }
-      if (!form.scheduled_time.trim()) {
-        alert("Please select desired delivery time");
+      if (!form.ward.trim() || !form.street.trim()) {
+        alert(
+          "Please fill in full ward/commune information and house number/street name."
+        );
         return false;
       }
     }
-
     try {
       const delivery_address =
         `${form.street}, ${form.ward}, ${form.district}`.trim();
@@ -171,7 +216,12 @@ export default function Checkout() {
       });
       return true;
     } catch (err) {
-      alert(err.response?.data?.message || "err order qr");
+      if (err.response && err.response.status === 409) {
+        alert(err.response.data.message);
+        await navigateToMenuWithNewCart();
+      } else {
+        alert(err.response?.data?.message || "err order qr");
+      }
       return false;
     }
   };
@@ -181,7 +231,6 @@ export default function Checkout() {
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().slice(0, 16);
   }
-
 
   const [minDateTime] = useState(getCurrentDateTimeLocal());
 
@@ -196,14 +245,13 @@ export default function Checkout() {
   //   }
   // }
 
-
   useEffect(() => {
     const fetchPromos = async () => {
       try {
         const res = await API.get(`/promotion`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         const available = res.data.filter(
           (p) =>
             p.branch_id === checkoutData.branch.id &&
@@ -359,7 +407,7 @@ export default function Checkout() {
                               //   return;
                               // }
 
-                              // format về "YYYY-MM-DD HH:mm:00"
+                              
                               const year = selectedDate.getFullYear();
                               const month = String(
                                 selectedDate.getMonth() + 1

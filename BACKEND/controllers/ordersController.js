@@ -7,7 +7,6 @@ export const getCheckoutInfo = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.user_id;
 
-    
     const [orders] = await db.query(
       `SELECT o.*, u.name AS user_name, u.phone AS user_phone, b.name AS branch_name, b.address AS branch_address
         FROM orders o
@@ -22,7 +21,6 @@ export const getCheckoutInfo = async (req, res) => {
     }
     const order = orders[0];
 
-    
     const [items] = await db.query(
       `SELECT oi.order_item_id, m.name, m.image, oi.quantity, oi.unit_price, oi.line_total, oi.option_summary
         FROM order_items oi
@@ -49,9 +47,65 @@ export const getCheckoutInfo = async (req, res) => {
   }
 };
 
+const checkStockAndClearCartIfUnavailable = async (order_id) => {
+  const [itemsInCart] = await db.query(
+    `SELECT 
+       oi.item_id, 
+       oi.quantity, 
+       m.name, 
+       m.stock_quantity, 
+       m.is_available 
+     FROM order_items oi
+     JOIN menu_items m ON oi.item_id = m.item_id
+     WHERE oi.order_id = ?`,
+    [order_id]
+  );
+  if (itemsInCart.length === 0) {
+    return {
+      success: false,
+      message: "Your cart is empty.",
+      items: [],
+    };
+  }
+
+  const unavailableItems = [];
+  for (const item of itemsInCart) {
+    if (
+      Number(item.is_available) !== 1 ||
+      (item.stock_quantity !== null &&
+        Number(item.quantity) > Number(item.stock_quantity))
+    ) {
+      unavailableItems.push(item);
+    }
+  }
+
+  if (unavailableItems.length > 0) {
+    await db.query("DELETE FROM order_items WHERE order_id = ?", [order_id]);
+
+    await db.query(
+      `UPDATE orders SET 
+         total_price = 0, 
+         final_price = 0, 
+         discount_amount = 0, 
+         promo_id = NULL 
+       WHERE order_id = ?`,
+      [order_id]
+    );
+
+    const itemNames = unavailableItems.map((i) => i.name).join(", ");
+    return {
+      success: false,
+      message: `Sorry, the following items are out of stock or out of quantity: ${itemNames}, please reorder.`,
+      items: unavailableItems.map((i) => i.name),
+    };
+  }
+
+  return { success: true };
+};
+
 export const confirmOrder = async (req, res) => {
   try {
-    const { id } = req.params; 
+    const { id } = req.params;
     const userId = req.user.user_id;
     const {
       customer_name,
@@ -63,7 +117,6 @@ export const confirmOrder = async (req, res) => {
       message,
     } = req.body;
 
-    
     const [orders] = await db.query(
       `SELECT * FROM orders WHERE order_id = ? AND user_id = ? AND status = 'DRAFT'`,
       [id, userId]
@@ -74,16 +127,31 @@ export const confirmOrder = async (req, res) => {
         .json({ message: "No shopping cart found to confirm" });
     }
 
-    
-    if (order_type === "TAKEAWAY" && !scheduled_time) {
-      return res
-        .status(400)
-        .json({ message: "Please select a time for TAKEAWAY" });
+    const stockCheck = await checkStockAndClearCartIfUnavailable(id);
+    if (!stockCheck.success) {
+      return res.status(409).json({
+        message: stockCheck.message,
+        unavailableItems: stockCheck.items,
+        action: "CLEAR_CART",
+      });
+    }
+
+    if (!customer_name || customer_name.trim() === "") {
+      return res.status(400).json({ message: "Recipient name is required" });
+    }
+    if (!customer_phone || customer_phone.trim() === "") {
+      return res.status(400).json({ message: "Recipient phone is required" });
+    }
+
+    if (!scheduled_time || scheduled_time.trim() === "") {
+      const message =
+        order_type === "TAKEAWAY"
+          ? "Please select a time for TAKEAWAY"
+          : "Please select a delivery time";
+      return res.status(400).json({ message });
     }
     if (order_type === "DELIVERY" && !delivery_address) {
-      return res
-        .status(400)
-        .json({ message: "Please enter shipping address" });
+      return res.status(400).json({ message: "Please enter shipping address" });
     }
 
     await db.query(
@@ -125,7 +193,6 @@ export const confirmOrderQR = async (req, res) => {
       message,
     } = req.body;
 
-    
     const [orders] = await db.query(
       `SELECT * FROM orders WHERE order_id = ? AND user_id = ? AND status = 'DRAFT'`,
       [id, userId]
@@ -136,16 +203,27 @@ export const confirmOrderQR = async (req, res) => {
         .json({ message: "No shopping cart found to confirm" });
     }
 
-    
-    if (
-      order_type === "TAKEAWAY" &&
-      (!scheduled_time || scheduled_time.trim() === "")
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Please select a time for TAKEAWAY" });
+    const stockCheck = await checkStockAndClearCartIfUnavailable(id);
+    if (!stockCheck.success) {
+      return res.status(409).json({
+        message: stockCheck.message,
+        unavailableItems: stockCheck.items,
+        action: "CLEAR_CART", // frontend
+      });
     }
-
+    if (!customer_name || customer_name.trim() === "") {
+      return res.status(400).json({ message: "Recipient name is required" });
+    }
+    if (!customer_phone || customer_phone.trim() === "") {
+      return res.status(400).json({ message: "Recipient phone is required" });
+    }
+    if (!scheduled_time || scheduled_time.trim() === "") {
+      const message =
+        order_type === "TAKEAWAY"
+          ? "Please select a time for TAKEAWAY"
+          : "Please select a delivery time";
+      return res.status(400).json({ message });
+    }
     if (order_type === "DELIVERY" && !delivery_address) {
       return res.status(400).json({ message: "Please enter shipping address" });
     }
@@ -178,14 +256,12 @@ export const confirmOrderQR = async (req, res) => {
   }
 };
 
-
 export const applyPromotion = async (req, res) => {
   try {
     const { id } = req.params; // order_id
     const { promo_id } = req.body;
     const userId = req.user.user_id;
 
-    
     const [orders] = await db.query(
       `SELECT * FROM orders WHERE order_id=? AND user_id=? AND status='DRAFT'`,
       [id, userId]
@@ -287,11 +363,9 @@ export const payOSWebhook = async (req, res) => {
     }
     console.log("Webhook signature VERIFIED");
 
-    
     const orderCode = data.data?.orderCode;
     console.log(`Extracted orderCode: [${orderCode}]`);
 
-    
     if (data.code === "00" && data.success) {
       console.log(`SUCCESS condition met for order [${orderCode}].`);
 
@@ -362,7 +436,7 @@ export const payOSWebhook = async (req, res) => {
         });
       } finally {
         connection.release();
-      } 
+      }
     } else {
       console.log(
         `Webhook reported NON-SUCCESS. Code: [${data.code}], Success: [${data.success}]`
