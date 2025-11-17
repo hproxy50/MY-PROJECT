@@ -1,7 +1,6 @@
 // staffOrdersController.js
 import db from "../config/db.js";
 
-
 const ensureStaff = (req, res) => {
   if (!req.user || req.user.role !== "STAFF") {
     return res.status(403).json({ message: "Only staff access" });

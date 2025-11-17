@@ -191,6 +191,7 @@ export default function StaffOrder() {
                   <th>#</th>
                   <th>Khách hàng</th>
                   <th>Loại đơn</th>
+                  {/* <th>Payment</th> */}
                   <th>Tổng tiền</th>
                   <th>Thời gian mong muốn</th>
                   <th>Ngày tạo</th>
@@ -230,12 +231,13 @@ export default function StaffOrder() {
                       <td className="text-center">
                         {order.order_type === "DELIVERY" ? (
                           <Badge bg="info">🚚 Giao hàng</Badge>
-                        ) : order.order_type === "TAKEAWAY" ? ( // BỔ SUNG: Xử lý thêm loại TAKEAWAY
+                        ) : order.order_type === "TAKEAWAY" ? (
                           <Badge bg="warning">🛍️ Mang về</Badge>
                         ) : (
                           <Badge bg="primary">🏠 Tại quán</Badge>
                         )}
                       </td>
+                      {/* <td>{order.payment_method}</td> */}
                       <td className="text-end fw-semibold">
                         {order.final_price.toLocaleString()}₫
                       </td>

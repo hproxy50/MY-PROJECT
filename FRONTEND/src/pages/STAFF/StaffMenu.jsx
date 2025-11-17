@@ -348,7 +348,7 @@ export default function StaffMenu() {
                   <td>
                     {item.image ? (
                       <img
-                        src={`http://localhost:3000${item.image}`} // Thay bằng URL API của bạn
+                        src={`http://localhost:3000${item.image}`}
                         alt={item.name}
                         style={{
                           width: "70px",
@@ -391,7 +391,7 @@ export default function StaffMenu() {
                       size="sm"
                       variant="warning"
                       onClick={() => handleShowModal(item)}
-                      className="me-2 mb-1" // Thêm mb-1 cho responsive
+                      className="me-2 mb-1"
                     >
                       Sửa
                     </Button>
@@ -410,8 +410,6 @@ export default function StaffMenu() {
           </Table>
         </Card.Body>
       </Card>
-
-      {/* Modal thêm/sửa (Giữ nguyên cấu trúc) */}
       <Modal
         show={showModal}
         onHide={handleCloseModal}
@@ -424,7 +422,6 @@ export default function StaffMenu() {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {/* Form giữ nguyên, nó đã responsive sẵn nhờ <Row> và <Col md={X}> */}
           <Form onSubmit={handleSubmit}>
             <Row>
               <Col md={8}>

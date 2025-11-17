@@ -7,6 +7,7 @@ import { useParams } from "react-router-dom";
 import API from "../../api/api";
 import product from "../../assets/image/product.jpg";
 import HeaderStatus from "../../components/headerStatus";
+import NoImage from "../../assets/image/NoImage.png";
 import { useNavigate } from "react-router-dom";
 
 export default function Checkout() {
@@ -65,8 +66,9 @@ export default function Checkout() {
   useEffect(() => {
     const now = new Date();
     const currentHour = now.getHours();
-    const startHour = Math.max(8, currentHour + 1);
-    const endHour = 20;
+    // const startHour = Math.max(8, currentHour + 1);
+    const startHour = currentHour + 1;
+    const endHour = 23;
     const options = [];
     if (startHour <= endHour) {
       for (let hour = startHour; hour <= endHour; hour++) {
@@ -618,7 +620,7 @@ export default function Checkout() {
                         alt={i.name}
                       />
                     ) : (
-                      "NO IMAGE"
+                      <img src={NoImage} alt="default" />
                     )}
                     <div className="product-info">
                       <p className="product-info-name">{i.name}</p>
@@ -650,15 +652,31 @@ export default function Checkout() {
                       <option value="" disabled selected>
                         Choosing promotion
                       </option>
-                      {promos.map((p) => (
-                        <option key={p.promo_id} value={p.promo_id}>
-                          {p.title} (
-                          {p.discount_type === "PERCENT"
-                            ? `${p.discount_value}%`
-                            : `${p.discount_value} đ`}
-                          )
-                        </option>
-                      ))}
+                      {promos.map((p) => {
+                        const isEligible =
+                          Number(checkoutData.total_price) >=
+                          Number(p.min_order_value);
+
+                        return (
+                          <option
+                            key={p.promo_id}
+                            value={p.promo_id}
+                            disabled={!isEligible}
+                          >
+                            {p.title} (
+                            {p.discount_type === "PERCENT"
+                              ? `${p.discount_value}%`
+                              : `${Number(p.discount_value).toLocaleString(
+                                  "vi-VN"
+                                )} đ`}
+                            )
+                            {!isEligible &&
+                              ` (need ${Number(p.min_order_value).toLocaleString(
+                                "vi-VN"
+                              )}đ)`}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   <button

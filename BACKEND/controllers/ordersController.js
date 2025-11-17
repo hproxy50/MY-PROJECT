@@ -266,18 +266,20 @@ export const applyPromotion = async (req, res) => {
       `SELECT * FROM orders WHERE order_id=? AND user_id=? AND status='DRAFT'`,
       [id, userId]
     );
+
     if (orders.length === 0)
       return res.status(404).json({ message: "Order DRAFT not found" });
     const order = orders[0];
 
     const [promos] = await db.query(
       `SELECT * FROM promotions 
-        WHERE promo_id=? 
+          WHERE promo_id=? 
           AND branch_id=? 
           AND start_date <= NOW() 
           AND end_date >= NOW()`,
       [promo_id, order.branch_id]
     );
+
     if (promos.length === 0)
       return res
         .status(400)
@@ -285,15 +287,26 @@ export const applyPromotion = async (req, res) => {
 
     const promo = promos[0];
 
+    const orderTotal = Number(order.total_price);
+    const minRequired = Number(promo.min_order_value);
+
+    if (minRequired > 0 && orderTotal < minRequired) {
+      return res.status(400).json({
+        message: `Your order must meet the minimum ${minRequired.toLocaleString(
+          "vi-VN"
+        )}đ to apply this code.`,
+      });
+    }
+
     let discount = 0;
     if (promo.discount_type === "PERCENT") {
-      discount = (order.total_price * promo.discount_value) / 100;
+      discount = (orderTotal * promo.discount_value) / 100;
     } else if (promo.discount_type === "AMOUNT") {
       discount = promo.discount_value;
     }
-    if (discount > order.total_price) discount = order.total_price;
+    if (discount > orderTotal) discount = orderTotal;
 
-    const finalPrice = order.total_price - discount;
+    const finalPrice = orderTotal - discount;
 
     await db.query(
       `UPDATE orders SET promo_id=?, discount_amount=?, final_price=? WHERE order_id=?`,
@@ -303,7 +316,7 @@ export const applyPromotion = async (req, res) => {
     return res.json({
       order_id: id,
       discount,
-      total_price: order.total_price,
+      total_price: orderTotal,
       final_price: finalPrice,
       promo_id: promo.promo_id,
       discount_amount: discount,

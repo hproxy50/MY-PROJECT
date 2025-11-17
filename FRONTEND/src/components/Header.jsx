@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ShoppingCart, Search, Phone, Star } from "lucide-react";
 import API from "../api/api";
 import "../css/Header.scss";
-import LogoImage from "../assets/image/pizza.png";
+import LogoImage from "../assets/image/logo.png";
 
 const Header = ({
   orderId,

@@ -6,6 +6,7 @@ import API from "../../api/api";
 import HeaderStatus from "../../components/headerStatus";
 import "../../css/cart.scss";
 import Empty from "../../assets/image/empty.jpg";
+import NoImage from "../../assets/image/NoImage.png"
 
 
 export default function Cart() {
@@ -107,7 +108,7 @@ export default function Cart() {
                             alt={item.name}
                           />
                         ) : (
-                          "NO IMAGE"
+                          <img src={NoImage} alt="default" />
                         )}
                         <div className="product-detail-namedesc">
                           <h5>{item.name}</h5>

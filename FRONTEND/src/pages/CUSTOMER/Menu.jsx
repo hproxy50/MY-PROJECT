@@ -3,7 +3,7 @@ import API from "../../api/api";
 import { useParams, useNavigate } from "react-router-dom";
 import "../../css/Menu.scss";
 import Header from "../../components/Header";
-import product from "../../assets/image/product.jpg";
+import product from "../../assets/image/NoImage.png";
 
 export default function Menu() {
   const { branchId, orderId } = useParams();
@@ -247,7 +247,7 @@ export default function Menu() {
                                 alt={item.name}
                               />
                             ) : (
-                              "NO IMAGE"
+                              <img src={product} alt="default" />
                             )}
                             <p>{item.food_type}</p>
                             <h3 className="product-name">{item.name}</h3>

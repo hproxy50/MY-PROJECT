@@ -43,7 +43,7 @@ export default function AdminPromotion() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentPromo, setCurrentPromo] = useState(null);
-  
+
   // --- STATE MODAL XÓA ---
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -53,6 +53,7 @@ export default function AdminPromotion() {
     description: "",
     discount_type: "PERCENT",
     discount_value: 0,
+    min_order_value: 0,
     start_date: "",
     end_date: "",
     branch_id: "",
@@ -66,14 +67,13 @@ export default function AdminPromotion() {
       // Lấy danh sách promotions và branches song song
       const [promoRes, branchRes] = await Promise.all([
         API.get("/promotion"), // API endpoint từ promoRoutes.js
-        API.get("/branch"),   // API endpoint từ branchRoutes.js
+        API.get("/branch"), // API endpoint từ branchRoutes.js
       ]);
       setPromotions(promoRes.data);
       setBranches(branchRes.data);
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          "Lỗi khi tải dữ liệu. Vui lòng thử lại."
+        err.response?.data?.message || "Lỗi khi tải dữ liệu. Vui lòng thử lại."
       );
     } finally {
       setLoading(false);
@@ -105,6 +105,7 @@ export default function AdminPromotion() {
       description: "",
       discount_type: "PERCENT",
       discount_value: 0,
+      min_order_value: 0,
       start_date: "",
       end_date: "",
       branch_id: "",
@@ -113,14 +114,14 @@ export default function AdminPromotion() {
 
   const handleShowAddModal = () => {
     setIsEditing(false);
-    // Lấy ngày giờ hiện tại và 1 ngày sau cho form thêm mới
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     setFormData({
       title: "",
       description: "",
       discount_type: "PERCENT",
-      discount_value: 10, // Mặc định 10%
+      discount_value: 10,
+      min_order_value: 0,
       start_date: formatDateForInput(now.toISOString()),
       end_date: formatDateForInput(tomorrow.toISOString()),
       branch_id: "",
@@ -136,6 +137,7 @@ export default function AdminPromotion() {
       description: promo.description || "",
       discount_type: promo.discount_type,
       discount_value: promo.discount_value,
+      min_order_value: promo.min_order_value || 0,
       start_date: formatDateForInput(promo.start_date),
       end_date: formatDateForInput(promo.end_date),
       branch_id: promo.branch_id,
@@ -153,7 +155,6 @@ export default function AdminPromotion() {
     setShowDeleteModal(false);
   };
 
-  // --- 4. XỬ LÝ FORM & SUBMIT ---
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -166,37 +167,39 @@ export default function AdminPromotion() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFeedback(null);
-    
+
     // Validate frontend đơn giản
     if (new Date(formData.start_date) >= new Date(formData.end_date)) {
-        setFeedback({ type: 'danger', message: 'Ngày kết thúc phải sau ngày bắt đầu.' });
-        resetFeedback();
-        return;
+      setFeedback({
+        type: "danger",
+        message: "Ngày kết thúc phải sau ngày bắt đầu.",
+      });
+      resetFeedback();
+      return;
     }
-    if (formData.discount_type === 'PERCENT' && (formData.discount_value <= 0 || formData.discount_value > 100)) {
-         setFeedback({ type: 'danger', message: 'Giá trị % phải từ 1 đến 100.' });
-         resetFeedback();
-         return;
+    if (
+      formData.discount_type === "PERCENT" &&
+      (formData.discount_value <= 0 || formData.discount_value > 100)
+    ) {
+      setFeedback({ type: "danger", message: "Giá trị % phải từ 1 đến 100." });
+      resetFeedback();
+      return;
     }
-     if (formData.discount_type === 'AMOUNT' && formData.discount_value <= 0) {
-         setFeedback({ type: 'danger', message: 'Giá trị giảm phải lớn hơn 0.' });
-         resetFeedback();
-         return;
+    if (formData.discount_type === "AMOUNT" && formData.discount_value <= 0) {
+      setFeedback({ type: "danger", message: "Giá trị giảm phải lớn hơn 0." });
+      resetFeedback();
+      return;
     }
-     if (!formData.branch_id) {
-         setFeedback({ type: 'danger', message: 'Vui lòng chọn chi nhánh.' });
-         resetFeedback();
-         return;
+    if (!formData.branch_id) {
+      setFeedback({ type: "danger", message: "Vui lòng chọn chi nhánh." });
+      resetFeedback();
+      return;
     }
-
 
     try {
       if (isEditing) {
         // --- CẬP NHẬT ---
-        await API.put(
-          `/promotion/update/${currentPromo.promo_id}`,
-          formData
-        );
+        await API.put(`/promotion/update/${currentPromo.promo_id}`, formData);
         setFeedback({
           type: "success",
           message: "Cập nhật khuyến mãi thành công!",
@@ -306,7 +309,7 @@ export default function AdminPromotion() {
               </Spinner>
             </div>
           ) : error ? (
-             <Alert variant="danger">{error}</Alert>
+            <Alert variant="danger">{error}</Alert>
           ) : (
             <Table striped bordered hover responsive>
               <thead className="table-light">
@@ -315,6 +318,7 @@ export default function AdminPromotion() {
                   <th>Chi nhánh</th>
                   <th>Loại</th>
                   <th>Giá trị</th>
+                  <th>Đơn tối thiểu</th>
                   <th>Bắt đầu</th>
                   <th>Kết thúc</th>
                   <th>Trạng thái</th>
@@ -343,23 +347,28 @@ export default function AdminPromotion() {
                         </Badge>
                       </td>
                       <td>
+                        {" "}
                         {promo.discount_type === "PERCENT"
                           ? `${promo.discount_value}%`
                           : `${Number(promo.discount_value).toLocaleString(
                               "vi-VN"
                             )} đ`}
+                        {" "}
+                      </td>
+                      {" "}
+                      <td>
+                        {" "}
+                        {Number(promo.min_order_value) > 0
+                          ? `${Number(promo.min_order_value).toLocaleString(
+                              "vi-VN"
+                            )} đ`
+                          : "Zero"}{" "}
                       </td>
                       <td>
-                        {format(
-                          new Date(promo.start_date),
-                          "dd/MM/yyyy HH:mm"
-                        )}
+                        {format(new Date(promo.start_date), "dd/MM/yyyy HH:mm")}
                       </td>
                       <td>
-                        {format(
-                          new Date(promo.end_date),
-                          "dd/MM/yyyy HH:mm"
-                        )}
+                        {format(new Date(promo.end_date), "dd/MM/yyyy HH:mm")}
                       </td>
                       <td>
                         <Badge bg={status.bg}>{status.text}</Badge>
@@ -478,22 +487,48 @@ export default function AdminPromotion() {
                 </Form.Group>
               </Col>
             </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Áp dụng cho chi nhánh</Form.Label>
-              <Form.Select
-                name="branch_id"
-                value={formData.branch_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">-- Chọn chi nhánh --</option>
-                {branches.map((branch) => (
-                  <option key={branch.branch_id} value={branch.branch_id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+            {/* SỬA LẠI ROW CUỐI CÙNG TRONG MODAL */}
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Áp dụng cho chi nhánh</Form.Label>
+                  <Form.Select
+                    name="branch_id"
+                    value={formData.branch_id}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">-- Chọn chi nhánh --</option>
+                    {branches.map((branch) => (
+                      <option key={branch.branch_id} value={branch.branch_id}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+
+              {/* <-- THÊM TRƯỜNG NHẬP LIỆU MỚI --> */}
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Giá trị đơn tối thiểu</Form.Label>
+                  <InputGroup>
+                    <Form.Control
+                      type="number"
+                      name="min_order_value"
+                      value={formData.min_order_value}
+                      onChange={handleChange}
+                      min="0"
+                    />
+                    <InputGroup.Text>VND</InputGroup.Text>
+                  </InputGroup>
+                  <Form.Text muted>
+                    Để 0 nếu không yêu cầu giá trị tối thiểu.
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              {/* <-- KẾT THÚC THÊM --> */}
+            </Row>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseModal}>

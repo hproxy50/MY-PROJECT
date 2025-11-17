@@ -156,7 +156,7 @@ const ShipperOrderCard = ({
           {processingType === "completing" ? (
             <span className="Shipper-order-footer-spinner"></span>
           ) : isDelivery ? (
-            "Delivered"
+            "Delivery"
           ) : (
             "Picked Up"
           )}{" "}

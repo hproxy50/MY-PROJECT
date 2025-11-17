@@ -13,9 +13,10 @@ import History from "./pages/CUSTOMER/History";
 import PaymentResult from "./pages/CUSTOMER/PaymentResult";
 import Rating from "./pages/CUSTOMER/Rating";
 import Chef from "./pages/CHEF/ChefPage.jsx";
-import Shipper from "./pages/SHIPPER/Shipper.jsx"
+import Shipper from "./pages/Receptionist/Shipper.jsx"
 import ForgotPassword from "./components/ForgotPassword.jsx";
 import ResetPassword from "./components/ResetPassword.jsx";
+import LoginTest from "./pages/AUTH/loginAuth.jsx"
 
 function App() {
   return (
@@ -37,6 +38,8 @@ function App() {
       <Route path="/history" element={<History />} />
       <Route path="/payment-success" element={<PaymentResult />} />
       <Route path="/payment-cancel" element={<PaymentResult />} />
+
+      <Route path="/login-test" element={<LoginTest />} />
 
 
       <Route
