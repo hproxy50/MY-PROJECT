@@ -189,7 +189,7 @@ export default function AdminStaffCRUD() {
       }
     } else {
       if (!formData.password) {
-        alert("Mật khẩu là bắt buộc khi tạo user mới.");
+        alert("Password is required when creating new user");
         return;
       }
       payload.password = formData.password;
@@ -213,7 +213,7 @@ export default function AdminStaffCRUD() {
       fetchUsers();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Lỗi kết nối server.");
+      alert(err.response?.data?.message || "Server connection error");
     }
   };
   const handleDeleteClick = (user) => {
@@ -230,7 +230,7 @@ export default function AdminStaffCRUD() {
       alert(response.data.message);
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi xóa");
+      alert(err.response?.data?.message || "Error while deleting");
     } finally {
       setShowDeleteModal(false);
       setUserToDelete(null);
@@ -265,11 +265,11 @@ export default function AdminStaffCRUD() {
         <Card.Header className="p-3 bg-white">
           <Row className="justify-content-between align-items-center">
             <Col xs="auto">
-              <h3 className="mb-0 text-dark">👥 Quản lý Người dùng</h3>
+              <h3 className="mb-0 text-dark">User Management</h3>
             </Col>
             <Col xs="auto">
               <Button variant="primary" onClick={handleShowCreate}>
-                + Thêm Người dùng
+                + Add User
               </Button>
             </Col>
           </Row>
@@ -283,11 +283,11 @@ export default function AdminStaffCRUD() {
             className="mb-3"
           >
             <Nav.Item>
-              <Nav.Link eventKey="all">Tất cả ({users.length})</Nav.Link>
+              <Nav.Link eventKey="all">All users ({users.length})</Nav.Link>
             </Nav.Item>
             <Nav.Item>
               <Nav.Link eventKey="staff">
-                Nhân viên (
+                Staff (
                 {
                   users.filter((u) =>
                     ["STAFF", "CHEF", "SHIPPER"].includes(u.role)
@@ -298,12 +298,11 @@ export default function AdminStaffCRUD() {
             </Nav.Item>
             <Nav.Item>
               <Nav.Link eventKey="customer">
-                Khách hàng (
+                Customer (
                 {users.filter((u) => u.role === "CUSTOMER").length})
               </Nav.Link>
             </Nav.Item>
           </Nav>
-
           <Row className="mb-3">
             <Col md={5} lg={4}>
               <InputGroup>
@@ -319,7 +318,6 @@ export default function AdminStaffCRUD() {
               </InputGroup>
             </Col>
           </Row>
-
           {loading ? (
             <div className="text-center py-5">
               <Spinner animation="border" variant="primary" />
@@ -334,13 +332,13 @@ export default function AdminStaffCRUD() {
             >
               <thead className="table-light">
                 <tr>
-                  <th>Tên</th>
+                  <th>Name</th>
                   <th>Email</th>
-                  <th>Điện thoại</th>
+                  <th>Phone number</th>
                   <th>Role</th>
-                  <th>Chi nhánh</th>
+                  <th>Branch</th>
                   <th className="text-center" style={{ width: "130px" }}>
-                    Thao tác
+                    Action
                   </th>
                 </tr>
               </thead>
@@ -361,7 +359,7 @@ export default function AdminStaffCRUD() {
                           onClick={() => handleShowEdit(user)}
                           disabled={user.role === "ADMIN"}
                         >
-                          Sửa
+                          Edit
                         </Button>
                         <Button
                           size="sm"
@@ -369,7 +367,7 @@ export default function AdminStaffCRUD() {
                           onClick={() => handleDeleteClick(user)}
                           disabled={user.role === "ADMIN"}
                         >
-                          Xóa
+                          Delete
                         </Button>
                       </td>
                     </tr>
@@ -377,8 +375,7 @@ export default function AdminStaffCRUD() {
                 ) : (
                   <tr>
                     <td colSpan="6" className="text-center py-4 text-muted">
-                      {/* SỬA: Hiển thị thông báo tìm kiếm */}
-                      Không tìm thấy người dùng nào {searchTerm && `khớp với "${searchTerm}"`}.
+                      No users found {searchTerm && `match "${searchTerm}"`}.
                     </td>
                   </tr>
                 )}
@@ -387,8 +384,6 @@ export default function AdminStaffCRUD() {
           )}
         </Card.Body>
       </Card>
-
-      {/* --- MODAL THÊM/SỬA --- */}
       <Modal
         show={showModal}
         onHide={handleCloseModal}
@@ -399,8 +394,8 @@ export default function AdminStaffCRUD() {
         <Modal.Header closeButton>
           <Modal.Title>
             {isEditing
-              ? `Sửa User: ${editingUser?.name}`
-              : "Tạo User Mới"}
+              ? `Edit User: ${editingUser?.name}`
+              : "Create New User"}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
@@ -408,7 +403,7 @@ export default function AdminStaffCRUD() {
             {!isEditing && (
               <Form.Group as={Row} className="mb-3">
                 <Form.Label column sm={3}>
-                  Loại User
+                  User Type
                 </Form.Label>
                 <Col sm={9}>
                   <Button
@@ -418,7 +413,7 @@ export default function AdminStaffCRUD() {
                     onClick={() => handleFormTypeChange("CUSTOMER")}
                     className="me-2"
                   >
-                    Khách hàng
+                    Customer
                   </Button>
                   <Button
                     variant={
@@ -426,14 +421,14 @@ export default function AdminStaffCRUD() {
                     }
                     onClick={() => handleFormTypeChange("STAFF")}
                   >
-                    Nhân viên
+                    Staff
                   </Button>
                 </Col>
               </Form.Group>
             )}
 
             <Form.Group className="mb-3">
-              <Form.Label>Họ tên</Form.Label>
+              <Form.Label>Full name</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
@@ -458,7 +453,7 @@ export default function AdminStaffCRUD() {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Điện thoại</Form.Label>
+                  <Form.Label>Phone number</Form.Label>
                   <Form.Control
                     type="tel"
                     name="phone"
@@ -471,14 +466,14 @@ export default function AdminStaffCRUD() {
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Mật khẩu</Form.Label>
+              <Form.Label>Password</Form.Label>
               <Form.Control
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder={
-                  isEditing ? "Để trống nếu không muốn đổi" : "Bắt buộc khi tạo mới"
+                  isEditing ? "Leave blank if you do not want to change" : "Required when creating new"
                 }
                 required={!isEditing}
               />
@@ -490,7 +485,7 @@ export default function AdminStaffCRUD() {
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Role Nhân viên</Form.Label>
+                      <Form.Label>Staff role</Form.Label>
                       <Form.Select
                         name="role"
                         value={formData.role}
@@ -500,9 +495,9 @@ export default function AdminStaffCRUD() {
                       >
                         {!isEditing && (
                           <>
-                            <option value="STAFF">STAFF (Bán hàng)</option>
-                            <option value="CHEF">CHEF (Bếp)</option>
-                            <option value="SHIPPER">SHIPPER (Giao hàng)</option>
+                            <option value="STAFF">STAFF (Manager)</option>
+                            <option value="CHEF">CHEF (Kitchen)</option>
+                            <option value="SHIPPER">Receptionist (Order delivery)</option>
                           </>
                         )}
                         {isEditing && (
@@ -511,21 +506,21 @@ export default function AdminStaffCRUD() {
                       </Form.Select>
                       {isEditing && (
                         <Form.Text muted>
-                          Không thể thay đổi role sau khi tạo.
+                          Role cannot be changed after creation.
                         </Form.Text>
                       )}
                     </Form.Group>
                   </Col>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Chi nhánh</Form.Label>
+                      <Form.Label>Branch</Form.Label>
                       <Form.Select
                         name="branch_id"
                         value={formData.branch_id}
                         onChange={handleChange}
                         required={formType === "STAFF"}
                       >
-                        <option value="">-- Chọn chi nhánh --</option>
+                        <option value="">Select branch</option>
                         {branches.map((b) => (
                           <option key={b.branch_id} value={b.branch_id}>
                             {b.name}
@@ -540,40 +535,38 @@ export default function AdminStaffCRUD() {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseModal}>
-              Hủy
+              Cancel
             </Button>
             <Button variant="success" type="submit">
-              {isEditing ? "Lưu thay đổi" : "Tạo User"}
+              {isEditing ? "Save changes" : "Create User"}
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
-
-      {/* --- MODAL XÁC NHẬN XÓA --- */}
       <Modal
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title className="text-danger">Xác nhận xóa</Modal.Title>
+          <Modal.Title className="text-danger">Confirm deletion</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Bạn có chắc chắn muốn xóa user
+          Are you sure you want to delete user?
           <strong>
             {" "}
             {userToDelete?.name} ({userToDelete?.email})
           </strong>
           ?
           <br />
-          Hành động này không thể hoàn tác.
+          This action cannot be undone.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Hủy
+            Cancel
           </Button>
           <Button variant="danger" onClick={confirmDelete}>
-            Xóa ngay
+            Delete
           </Button>
         </Modal.Footer>
       </Modal>

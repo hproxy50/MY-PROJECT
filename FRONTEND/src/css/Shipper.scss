@@ -25,7 +25,7 @@
 
         li.active {
           color: green;
-          background-color: #e0e0e0; // Thêm màu nền active
+          background-color: #e0e0e0; 
 
           &::after {
             width: 100%;
@@ -37,12 +37,12 @@
           cursor: pointer;
 
           div {
-            padding: 11px 20px; // Tăng padding
+            padding: 11px 20px; 
             text-align: center;
             background-color: #ffffff;
             transition: background-color 0.2s, color 0.2s;
-            font-size: 1rem; // Tăng font-size
-            min-width: 120px; // Đảm bảo tab có độ rộng
+            font-size: 1rem;
+            min-width: 120px; 
           }
 
           // &::after {
@@ -76,7 +76,7 @@
     }
   }
 
-  /* ----- Style cho Grid ----- */
+ 
   .Shipper-mid {
     display: grid;
     gap: 24px;
@@ -95,7 +95,7 @@
     }
   }
 
-  /* ----- Style cho Alert (Giống History.scss) ----- */
+  
   .Shipper-alert {
     padding: 16px;
     margin-bottom: 16px;
@@ -128,12 +128,12 @@
     }
   }
 
-  /* ----- Style cho Thẻ Đơn Hàng ----- */
+  
   .Shipper-order {
     background-color: #ffffff;
     border: 1px solid #dee2e6;
     border-radius: 6px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); // Giống style của bạn
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); 
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -213,7 +213,7 @@
         }
       }
 
-      /* ----- Thông tin khách hàng (Style mới) ----- */
+      
       .Shipper-order-body-customer {
         list-style: none;
         padding: 0;
@@ -224,24 +224,24 @@
           padding: 6px 0;
           display: flex;
           align-items: flex-start;
-          gap: 8px; // Khoảng cách giữa label và text
+          gap: 8px; 
 
           strong {
             font-weight: 600;
             color: #212529;
-            flex-shrink: 0; // Không co lại
+            flex-shrink: 0; 
           }
 
           span {
             flex-grow: 1;
-            word-break: break-word; // Xuống dòng nếu địa chỉ quá dài
+            word-break: break-word; 
           }
 
-          // Style riêng cho dòng Total Price
+          
           strong:last-child {
-            margin-left: auto; // Đẩy giá sang bên phải
+            margin-left: auto;
             font-size: 1.1rem;
-            color: #dc3545; // Màu đỏ cho giá
+            color: #dc3545;
           }
         }
       }
@@ -262,7 +262,7 @@
         }
       }
 
-      /* ----- Danh sách món (Giữ nguyên) ----- */
+      
       .Shipper-order-body-items {
         //height: 300px;
         list-style: none;
@@ -338,7 +338,7 @@
         height: 44px;
 
         &.button-complete {
-          background-color: #198754; // Màu xanh lá
+          background-color: #198754; 
 
           &:hover {
             background-color: #157347;
@@ -346,7 +346,7 @@
         }
 
         &.button-cancel {
-          background-color: #dc3545; // Màu đỏ
+          background-color: #dc3545; 
 
           &:hover {
             background-color: #b02a37;
@@ -374,7 +374,7 @@
       }
     }
 
-    /* ----- Loading Skeleton ----- */
+    
     &.Shipper-order-loading {
       .placeholder {
         animation: placeholder-glow 1.5s infinite linear;
@@ -419,7 +419,7 @@
 }
 
 
-/* ----- Keyframes (Đặt ở cuối file) ----- */
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

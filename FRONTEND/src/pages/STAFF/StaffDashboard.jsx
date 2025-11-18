@@ -1,4 +1,4 @@
-import React, { useState } from "react"; // BỔ SUNG: useState
+import React, { useState } from "react";
 import {
   Container,
   Row,
@@ -8,7 +8,7 @@ import {
   Card,
   Table,
   Button,
-  Offcanvas, // BỔ SUNG: Offcanvas
+  Offcanvas,
 } from "react-bootstrap";
 import { Routes, Route, Link } from "react-router-dom";
 import StaffOrder from "./StaffOrder"
@@ -17,9 +17,7 @@ import StaffProduct from "./StaffProduct";
 import StaffCategory from "./StaffCategory";
 import StaffStat from "./StaffStat"
 
-// ----- Sidebar Content (Tách riêng nội dung để tái sử dụng) -----
 function SidebarContent({ onLinkClick }) {
-  // onLinkClick để đóng Offcanvas khi bấm link trên mobile
   return (
     <Nav className="flex-column">
       <Nav.Link as={Link} to="/staff/stat" className="text-white" onClick={onLinkClick}>
@@ -62,38 +60,24 @@ function Header({ onToggleSidebar }) {
   );
 }
 
-
-
-// ----- Layout chính (Sửa) -----
 export default function StaffDashboard() {
-  // BỔ SUNG: State để quản lý đóng/mở Offcanvas
   const [showSidebar, setShowSidebar] = useState(false);
   const handleSidebarClose = () => setShowSidebar(false);
   const handleSidebarToggle = () => setShowSidebar((prev) => !prev);
 
   return (
     <div>
-      {/* Truyền hàm toggle vào Header */}
       <Header onToggleSidebar={handleSidebarToggle} />
       <Container fluid>
         <Row>
-          {/* THAY ĐỔI: Sidebar trên Desktop
-            - Dùng d-none d-lg-block để ẩn trên mobile, hiện trên desktop
-            - Vẫn giữ position-fixed
-          */}
           <Col
             lg={2}
             className="bg-dark text-white vh-100 position-fixed d-none d-lg-flex flex-column p-3"
             style={{ width: "220px" }}
           >
             <h4 className="text-center mb-4">Staff Panel</h4>
-            <SidebarContent onLinkClick={null} /> {/* Không cần đóng khi bấm link */}
+            <SidebarContent onLinkClick={null} />
           </Col>
-
-          {/* BỔ SUNG: Sidebar trên Mobile (Offcanvas)
-            - Dùng d-lg-none để chỉ hiện trên mobile
-            - Bị điều khiển bởi state showSidebar
-          */}
           <Offcanvas
             show={showSidebar}
             onHide={handleSidebarClose}
@@ -107,18 +91,10 @@ export default function StaffDashboard() {
               <SidebarContent onLinkClick={handleSidebarClose} />
             </Offcanvas.Body>
           </Offcanvas>
-
-          {/* THAY ĐỔI: Nội dung chính
-            - Bỏ style marginLeft
-            - Dùng Col xs={12} để full-width trên mobile
-            - Dùng lg={{ span: 10, offset: 2 }} để đẩy nội dung sang phải 
-              (bằng với độ rộng Col sidebar) trên desktop
-          */}
           <Col
             xs={12}
             lg={{ span: 10, offset: 2 }}
             className="p-4"
-            // BỎ: style={{ marginLeft: "220px" }}
           >
             <Routes>
               <Route path="stat" element={<StaffStat />} />

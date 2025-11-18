@@ -19,7 +19,7 @@ export default function ForgotPassword() {
       const res = await API.post("/auth/forgot-password", { email });
       setMessage(res.data.message);
     } catch (err) {
-      setError(err.response?.data?.message || "Lỗi server");
+      setError(err.response?.data?.message || "Server error");
     } finally {
       setLoading(false);
     }
@@ -27,7 +27,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="container mt-5">
-      <h2 className="text-center mb-4">Quên mật khẩu</h2>
+      <h2 className="text-center mb-4">Forgot password</h2>
       <form
         onSubmit={handleSubmit}
         className="mx-auto"
@@ -37,8 +37,7 @@ export default function ForgotPassword() {
         {error && <div className="alert alert-danger">{error}</div>}
 
         <p>
-          Nhập email của bạn. Nếu tài khoản tồn tại, chúng tôi sẽ gửi
-          link đặt lại mật khẩu.
+          Enter your email. If the account exists, we will send a password reset link.
         </p>
 
         <div className="mb-3">
@@ -53,11 +52,11 @@ export default function ForgotPassword() {
         </div>
 
         <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-          {loading ? "Đang gửi..." : "Gửi link"}
+          {loading ? "Sending..." : "Send link"}
         </button>
 
         <p className="mt-3 text-center">
-          <Link to="/login">Quay lại Đăng nhập</Link>
+          <Link to="/login">Back to Login</Link>
         </p>
       </form>
     </div>

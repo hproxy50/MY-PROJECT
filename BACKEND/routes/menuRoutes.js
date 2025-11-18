@@ -4,7 +4,7 @@ import { upload } from "../middlewares/uploadMiddlewares.js";
 import {createMenuItem, getMenuItems, getMenuItemById, updateMenuItem, deleteMenuItem} from "../controllers/menuController.js";
 const router = express.Router();
 
-// Staff chỉ CRUD trong chi nhánh của họ, Admin CRUD tất cả
+
 router.post("/create", verifyToken,upload.single("image"), authorizeRoles("STAFF", "ADMIN"), createMenuItem);
 
 router.get("/", verifyToken, authorizeRoles("STAFF", "ADMIN","CUSTOMER"), getMenuItems);

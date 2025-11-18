@@ -14,11 +14,11 @@ export default function Login() {
 
     try {
       const res = await API.post("/auth/login", { email, password });
-      // Lưu token và user
+      
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       alert("Đăng nhập thành công");
-      // Điều hướng theo role
+      
       const role = res.data.user.role;
       if (role === "STAFF") {
         navigate("/staff/orders");

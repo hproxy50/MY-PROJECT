@@ -3,7 +3,7 @@ import db from "../config/db.js";
 
 export const getAdminDashboardSummary = async (req, res) => {
   try {
-    // 1. Doanh thu (Hôm nay, Tuần, Tháng)
+    // 1. Revenue (Today, Week, Month)
     const [revenueData] = await db.query(`
       SELECT 
         COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() THEN final_price ELSE 0 END), 0) AS revenue_today,
@@ -13,7 +13,7 @@ export const getAdminDashboardSummary = async (req, res) => {
       WHERE status = 'COMPLETED'
     `);
 
-    // 2. Tổng đơn hàng (Hôm nay, Tuần, Tháng) & Trạng thái đơn
+    // 2. Total orders (Today, Week, Month) & Order status
     const [orderData] = await db.query(`
       SELECT 
         COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as orders_today,
@@ -25,7 +25,7 @@ export const getAdminDashboardSummary = async (req, res) => {
       FROM orders
     `);
 
-    // 3. Tổng User (Khách hàng, Nhân viên)
+    // 3. Total Users (Customers, Employees)
     const [userData] = await db.query(`
       SELECT 
         SUM(CASE WHEN role = 'CUSTOMER' THEN 1 ELSE 0 END) as total_customers,
@@ -35,7 +35,7 @@ export const getAdminDashboardSummary = async (req, res) => {
       FROM users
     `);
 
-    // 4. BIỂU ĐỒ: Doanh thu theo chi nhánh
+    // 4. CHART: Revenue by branch
     const [revenueByBranch] = await db.query(`
       SELECT b.name as branch_name, SUM(o.final_price) as total_revenue
       FROM orders o
@@ -45,7 +45,7 @@ export const getAdminDashboardSummary = async (req, res) => {
       ORDER BY total_revenue DESC
     `);
 
-    // 5. BIỂU ĐỒ: Rating theo chi nhánh
+    // 5. CHART: Rating by branch
     const [ratingByBranch] = await db.query(`
       SELECT b.name as branch_name, COALESCE(AVG(r.rating), 0) as average_rating
       FROM branches b
@@ -54,7 +54,7 @@ export const getAdminDashboardSummary = async (req, res) => {
       ORDER BY average_rating DESC
     `);
 
-    // 6. BIỂU ĐỒ: Tăng trưởng khách hàng (12 tháng qua)
+    // 6. CHART: Customer growth (past 12 months)
     const [customerGrowth] = await db.query(`
       SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as new_customers
       FROM users
@@ -63,7 +63,7 @@ export const getAdminDashboardSummary = async (req, res) => {
       ORDER BY month ASC
     `);
 
-    // 7. BIỂU ĐỒ: Top 10 món bán chạy
+    // 7. CHART: Top 10 best-selling items
     const [top10Items] = await db.query(`
       SELECT m.name, SUM(oi.quantity) as total_sold
       FROM order_items oi
@@ -75,7 +75,6 @@ export const getAdminDashboardSummary = async (req, res) => {
       LIMIT 10
     `);
 
-    // Gộp và trả về kết quả
     res.json({
       kpi: {
         revenue: {

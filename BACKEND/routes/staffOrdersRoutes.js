@@ -10,7 +10,7 @@ import { verifyToken, authorizeRoles } from "../middlewares/authMiddlewares.js";
 
 const router = express.Router();
 
-// tất cả endpoint dưới đây require auth
+
 router.get(
   "/orders",
   verifyToken,
@@ -30,7 +30,7 @@ router.post(
   approveOrders
 );
 
-// BỔ SUNG ROUTE MỚI
+
 router.post(
   "/orders/cancel",
   verifyToken,

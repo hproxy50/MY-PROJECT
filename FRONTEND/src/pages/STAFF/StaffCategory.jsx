@@ -11,49 +11,32 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
+import API from "../../api/api.js";
 
-// Hàm lấy token (giữ nguyên logic của bạn)
 const getToken = () => localStorage.getItem("token");
 
 export default function StaffCategory() {
-  // --- STATE QUẢN LÝ DỮ LIỆU ---
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
-  // --- STATE CHO MODAL THÊM/SỬA ---
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
-  
-  // Form data chỉ cần food_type theo backend
-  const [formData, setFormData] = useState({ 
-    food_type: "" 
+
+  const [formData, setFormData] = useState({
+    food_type: "",
   });
 
-  const API_URL = "http://localhost:3000/category";
-
-  // --- 1. FETCH DATA ---
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await fetch(API_URL, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setCategories(data);
-        setError(null);
-      } else {
-        setError(data.message || "Lỗi khi tải danh sách");
-      }
+      const response = await API.get("/category");
+      setCategories(response.data);
+      setError(null);
     } catch (err) {
-      setError("Không thể kết nối đến server");
+      setError(err.response?.data?.message || "Error loading list");
     } finally {
       setLoading(false);
     }
@@ -62,8 +45,10 @@ export default function StaffCategory() {
   useEffect(() => {
     fetchCategories();
   }, []);
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-  // --- 2. XỬ LÝ MODAL ---
   const handleCloseModal = () => {
     setShowModal(false);
     setFormData({ food_type: "" });
@@ -83,85 +68,63 @@ export default function StaffCategory() {
     setShowModal(true);
   };
 
-  // --- 3. SUBMIT FORM (THÊM/SỬA) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.food_type.trim()) {
-      alert("Tên category không được để trống");
+      alert("Category name cannot be blank");
       return;
     }
 
-    const url = isEditing 
-      ? `${API_URL}/update/${currentId}` 
-      : `${API_URL}/create`;
-    const method = isEditing ? "PUT" : "POST";
-
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert(isEditing ? "Cập nhật thành công!" : "Thêm mới thành công!");
-        fetchCategories();
-        handleCloseModal();
+      if (isEditing) {
+        await API.put(`/category/update/${currentId}`, formData);
+        alert("Update successful!");
       } else {
-        alert(data.message || "Có lỗi xảy ra");
+        await API.post("/category/create", formData);
+        alert("New addition successful!");
       }
+
+      handleCloseModal();
+      fetchCategories();
     } catch (err) {
       console.error(err);
-      alert("Lỗi kết nối server");
+      alert(err.response?.data?.message || "An error occurred.");
     }
   };
 
-  // --- 4. XỬ LÝ XÓA ---
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa category này?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this category? Dishes in this category will lose their category."
+      )
+    ) {
       try {
-        const response = await fetch(`${API_URL}/delete/${id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        });
-        const data = await response.json();
-
-        if (response.ok) {
-          alert("Xóa thành công!");
-          fetchCategories();
-        } else {
-          alert(data.message || "Không thể xóa");
-        }
+        await API.delete(`/category/delete/${id}`);
+        alert("Deleted successfully!");
+        fetchCategories();
       } catch (err) {
-        alert("Lỗi kết nối khi xóa");
+        alert(err.response?.data?.message || "Cannot be deleted");
       }
     }
   };
 
-  // --- GIAO DIỆN CHÍNH (Updated Style) ---
   return (
-    <Container fluid className="p-0"> 
-      {/* Alerts thông báo lỗi/load chung */}
-      {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
+    <Container fluid className="p-0">
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
       <Card className="shadow-sm">
-        {/* HEADER GIỐNG STAFF MENU */}
         <Card.Header className="p-3 bg-white">
           <Row className="justify-content-between align-items-center">
             <Col xs="auto">
-              <h3 className="mb-0 text-dark">📂 Quản lý Category</h3>
+              <h3 className="mb-0 text-dark">Category Management</h3>
             </Col>
             <Col xs="auto">
               <Button variant="primary" onClick={handleShowCreate}>
-                + Thêm Category
+                + Add new Category
               </Button>
             </Col>
           </Row>
@@ -173,13 +136,22 @@ export default function StaffCategory() {
               <Spinner animation="border" variant="primary" />
             </div>
           ) : (
-            /* BẢNG DỮ LIỆU STYLE MỚI */
-            <Table striped bordered hover responsive className="align-middle mb-0">
+            <Table
+              striped
+              bordered
+              hover
+              responsive
+              className="align-middle mb-0"
+            >
               <thead className="table-light">
                 <tr>
-                  <th className="text-center" style={{ width: "60px" }}>#</th>
-                  <th>Tên Category (Food Type)</th>
-                  <th style={{ width: "150px" }} className="text-center">Thao tác</th>
+                  <th className="text-center" style={{ width: "60px" }}>
+                    #
+                  </th>
+                  <th>Category Name (Food Type)</th>
+                  <th style={{ width: "150px" }} className="text-center">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -195,14 +167,14 @@ export default function StaffCategory() {
                           className="me-2"
                           onClick={() => handleShowEdit(cat)}
                         >
-                          Sửa
+                          Edit
                         </Button>
                         <Button
                           size="sm"
                           variant="danger"
                           onClick={() => handleDelete(cat.category_id)}
                         >
-                          Xóa
+                          Delete
                         </Button>
                       </td>
                     </tr>
@@ -210,7 +182,7 @@ export default function StaffCategory() {
                 ) : (
                   <tr>
                     <td colSpan="3" className="text-center py-4 text-muted">
-                      Chưa có dữ liệu category nào.
+                      No category data yet.
                     </td>
                   </tr>
                 )}
@@ -219,28 +191,28 @@ export default function StaffCategory() {
           )}
         </Card.Body>
       </Card>
-
-      {/* MODAL THÊM / SỬA */}
-      <Modal 
-        show={showModal} 
-        onHide={handleCloseModal} 
-        backdrop="static" 
+      <Modal
+        show={showModal}
+        onHide={handleCloseModal}
+        backdrop="static"
         centered
       >
         <Modal.Header closeButton>
           <Modal.Title>
-            {isEditing ? "Sửa Category" : "Thêm Category"}
+            {isEditing ? "Edit Category" : "Add Category"}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Tên Category (Food Type)</Form.Label>
+              <Form.Label>Category Name (Food Type)</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Ví dụ: Đồ uống, Món khai vị..."
+                placeholder="Example: Drinks, Appetizers..."
                 value={formData.food_type}
-                onChange={(e) => setFormData({ ...formData, food_type: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, food_type: e.target.value })
+                }
                 required
                 autoFocus
               />
@@ -248,10 +220,10 @@ export default function StaffCategory() {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseModal}>
-              Hủy
+              Cancel
             </Button>
             <Button variant="success" type="submit">
-              {isEditing ? "Cập nhật" : "Thêm mới"}
+              {isEditing ? "Edit" : "Add new"}
             </Button>
           </Modal.Footer>
         </Form>

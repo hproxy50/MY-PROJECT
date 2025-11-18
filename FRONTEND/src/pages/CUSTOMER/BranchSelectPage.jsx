@@ -7,7 +7,6 @@ export default function BranchSelectPage() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  // Load danh sách chi nhánh
   useEffect(() => {
     const fetchBranches = async () => {
       try {
@@ -22,7 +21,6 @@ export default function BranchSelectPage() {
     fetchBranches();
   }, [token]);
 
-  // Khi chọn chi nhánh
   const handleSelectBranch = async (branchId) => {
     try {
       const orderRes = await API.post(

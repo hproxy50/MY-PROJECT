@@ -101,7 +101,7 @@ export default function Rating() {
   }, [reviews, sortStar, sortTime]);
 
   if (loading) {
-    return <div className="rating-page-status">Đang tải đánh giá...</div>;
+    return <div className="rating-page-status">Loading reviews...</div>;
   }
 
   if (error) {

@@ -5,7 +5,6 @@ import { verifyToken, authorizeRoles } from "../middlewares/authMiddlewares.js";
 
 const router = express.Router();
 
-// Tất cả route này chỉ cho ADMIN
 router.use(verifyToken, authorizeRoles("ADMIN"));
 
 router.get("/users", getAllUsers);

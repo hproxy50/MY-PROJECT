@@ -1,5 +1,5 @@
 import { useState } from "react";
-import API from "../../api/api"; // Đảm bảo đường dẫn này đúng với project của bạn
+import API from "../../api/api"; 
 import { useNavigate, Link } from "react-router-dom";
 import "../../css/Login.scss";
 import loginImage from "../../assets/image/login.png";

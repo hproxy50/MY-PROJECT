@@ -3,7 +3,6 @@ import { verifyToken, authorizeRoles } from "../middlewares/authMiddlewares.js";
 import { createCategory, getCategory, getCategoryId, updateCategory, deleteCategory } from "../controllers/categoryController.js";
 const router = express.Router();
 
-// Staff chỉ CRUD trong chi nhánh của họ, Admin CRUD tất cả
 router.post("/create", verifyToken, authorizeRoles("STAFF", "ADMIN"), createCategory);
 
 router.get("/", verifyToken, authorizeRoles("STAFF", "ADMIN","CUSTOMER"), getCategory);

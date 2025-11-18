@@ -11,13 +11,13 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { token } = useParams(); // Lấy token từ URL
+  const { token } = useParams();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      setError("Mật khẩu không khớp.");
+      setError("Passwords do not match");
       return;
     }
 
@@ -27,15 +27,14 @@ export default function ResetPassword() {
 
     try {
       const res = await API.post(`/auth/reset-password/${token}`, { password });
-      setMessage(res.data.message + " Bạn sẽ được chuyển về trang đăng nhập...");
+      setMessage(res.data.message + "You will be redirected to the login page...");
       
-      // Chờ vài giây rồi chuyển hướng
       setTimeout(() => {
         navigate("/login");
       }, 3000);
 
     } catch (err) {
-      setError(err.response?.data?.message || "Lỗi server");
+      setError(err.response?.data?.message || "Server error");
     } finally {
       setLoading(false);
     }
@@ -43,7 +42,7 @@ export default function ResetPassword() {
 
   return (
     <div className="container mt-5">
-      <h2 className="text-center mb-4">Đặt lại mật khẩu mới</h2>
+      <h2 className="text-center mb-4">Reset new password</h2>
       <form
         onSubmit={handleSubmit}
         className="mx-auto"
@@ -53,7 +52,7 @@ export default function ResetPassword() {
         {error && <div className="alert alert-danger">{error}</div>}
 
         <div className="mb-3">
-          <label className="form-label">Mật khẩu mới:</label>
+          <label className="form-label">New password:</label>
           <input
             type="password"
             className="form-control"
@@ -64,7 +63,7 @@ export default function ResetPassword() {
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Xác nhận mật khẩu:</label>
+          <label className="form-label">Confirm password:</label>
           <input
             type="password"
             className="form-control"
@@ -75,12 +74,12 @@ export default function ResetPassword() {
         </div>
 
         <button type="submit" className="btn btn-primary w-100" disabled={loading || message}>
-          {loading ? "Đang lưu..." : "Lưu mật khẩu"}
+          {loading ? "Saving..." : "Save password"}
         </button>
 
          {message && (
            <p className="mt-3 text-center">
-             <Link to="/login">Đi đến Đăng nhập ngay</Link>
+             <Link to="/login">Go to Sign In Now</Link>
            </p>
          )}
       </form>

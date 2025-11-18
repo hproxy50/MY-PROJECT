@@ -25,13 +25,9 @@ export default function StaffOrder() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // THAY ĐỔI:
-      // Logic cũ gộp mảng phức tạp và không cần thiết.
-      // API luôn trả về danh sách PENDING mới nhất,
-      // nên ta chỉ cần ghi đè state là đủ.
       setOrders(res.data.orders || []);
     } catch (err) {
-      console.error("Lỗi lấy đơn:", err);
+      console.error("Error in taking order:", err);
     } finally {
       setLoading(false);
     }
@@ -39,9 +35,9 @@ export default function StaffOrder() {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000); // Lấy đơn mới mỗi 5s
+    const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
-  }, []); // THAY ĐỔI: Bỏ [token] khỏi dependency array, nếu token thay đổi component nên được unmount/remount.
+  }, []);
 
   const toggleSelect = (id) => {
     const s = new Set(selected);
@@ -50,41 +46,40 @@ export default function StaffOrder() {
   };
 
   const handleApproveSingle = async (orderId) => {
-    if (!window.confirm("Xác nhận DUYỆT đơn này sang PREPARING?")) return;
+    if (!window.confirm("Confirm APPROVING this application to PREPARING?")) return;
     try {
       const res = await API.post(
         `/staff/orders/approve`,
         { order_id: orderId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(res.data.message || "Duyệt thành công!");
-      fetchOrders(); // Tải lại danh sách
+      alert(res.data.message || "Successfully approved!");
+      fetchOrders();
       setSelected(new Set());
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi duyệt đơn!");
+      alert(err.response?.data?.message || "Error approving order!");
     }
   };
 
   const handleApproveBulk = async () => {
-    if (selected.size === 0) return alert("Chưa chọn đơn nào để duyệt!");
-    if (!window.confirm(`Duyệt ${selected.size} đơn sang PREPARING?`)) return;
+    if (selected.size === 0) return alert("No orders have been selected for approval!");
+    if (!window.confirm(`Browse ${selected.size} single to PREPARING?`)) return;
     try {
       const res = await API.post(
         `/staff/orders/approve`,
         { order_ids: Array.from(selected) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(res.data.message || "Duyệt thành công!");
-      fetchOrders(); // Tải lại danh sách
+      alert(res.data.message || "Successfully approved!");
+      fetchOrders();
       setSelected(new Set());
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi duyệt nhiều đơn!");
+      alert(err.response?.data?.message || "Error approving multiple orders!");
     }
   };
 
-  // BỔ SUNG: Hàm hủy 1 đơn (PENDING -> CANCELED)
   const handleCancelSingle = async (orderId) => {
-    if (!window.confirm("Xác nhận HỦY đơn hàng này? (Không thể hoàn tác)"))
+    if (!window.confirm("Confirm CANCEL this order? (Cannot be undone)"))
       return;
     try {
       const res = await API.post(
@@ -92,19 +87,18 @@ export default function StaffOrder() {
         { order_id: orderId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(res.data.message || "Hủy đơn thành công!");
-      fetchOrders(); // Tải lại danh sách
+      alert(res.data.message || "Cancellation successful!");
+      fetchOrders();
       setSelected(new Set());
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi hủy đơn!");
+      alert(err.response?.data?.message || "Order cancellation error!");
     }
   };
 
-  // BỔ SUNG: Hàm hủy nhiều đơn (PENDING -> CANCELED)
   const handleCancelBulk = async () => {
-    if (selected.size === 0) return alert("Chưa chọn đơn nào để hủy!");
+    if (selected.size === 0) return alert("No orders selected to cancel!");
     if (
-      !window.confirm(`Hủy ${selected.size} đơn đã chọn? (Không thể hoàn tác)`)
+      !window.confirm(`Cancel ${selected.size} selected order? (Cannot be undone)`)
     )
       return;
     try {
@@ -113,16 +107,15 @@ export default function StaffOrder() {
         { order_ids: Array.from(selected) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(res.data.message || "Hủy đơn thành công!");
-      fetchOrders(); // Tải lại danh sách
+      alert(res.data.message || "Cancellation successful!");
+      fetchOrders();
       setSelected(new Set());
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi hủy nhiều đơn!");
+      alert(err.response?.data?.message || "Multiple order cancellation error!");
     }
   };
 
   const handleView = async (orderId) => {
-    // Hàm này giữ nguyên, nó gọi API getPendingOrderDetails
     try {
       const res = await API.get(`/staff/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -130,8 +123,8 @@ export default function StaffOrder() {
       setSelectedOrder(res.data);
       setShowModal(true);
     } catch (err) {
-      console.error("Lỗi lấy chi tiết đơn:", err);
-      alert("Không thể tải chi tiết đơn hàng (có thể đơn vừa được duyệt/hủy)!");
+      console.error("Error getting single detail:", err);
+      alert("Unable to load order details (order may have been approved/canceled)!");
     }
   };
 
@@ -139,16 +132,16 @@ export default function StaffOrder() {
     return (
       <div className="d-flex flex-column justify-content-center align-items-center vh-100 text-center">
         <Spinner animation="border" variant="primary" className="mb-3" />
-        <h6 className="text-muted">Đang tải đơn hàng...</h6>
+        <h6 className="text-muted">Loading order...</h6>
       </div>
     );
 
   return (
     <>
       <div className="text-center mb-4">
-        <h3 className="fw-bold mb-2">📦 Đơn hàng chờ duyệt</h3>
+        <h3 className="fw-bold mb-2">Pending orders</h3>
         <p className="text-muted mb-0">
-          Theo dõi và xử lý đơn hàng PENDING trong hệ thống
+          Track and process PENDING orders in the system
         </p>
       </div>
 
@@ -157,16 +150,15 @@ export default function StaffOrder() {
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
             <div className="d-flex flex-wrap gap-2">
               <Button variant="success" onClick={handleApproveBulk}>
-                ✅ Duyệt các đơn đã chọn
+                Browse selected applications
               </Button>
-              {/* BỔ SUNG: Nút hủy nhiều đơn */}
               <Button variant="danger" onClick={handleCancelBulk}>
-                ❌ Hủy các đơn đã chọn
+                Cancel selected orders
               </Button>
             </div>
             <div>
               <Badge bg="secondary" pill className="fs-6">
-                {orders.length} đơn đang chờ
+                {orders.length} Pending orders
               </Badge>
             </div>
           </div>
@@ -189,20 +181,20 @@ export default function StaffOrder() {
                     />
                   </th>
                   <th>#</th>
-                  <th>Khách hàng</th>
-                  <th>Loại đơn</th>
+                  <th>Customers</th>
+                  <th>Order type</th>
                   {/* <th>Payment</th> */}
-                  <th>Tổng tiền</th>
-                  <th>Thời gian mong muốn</th>
-                  <th>Ngày tạo</th>
-                  <th>Hành động</th>
+                  <th>Total amount</th>
+                  <th>Desired time</th>
+                  <th>Creation time</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center py-4 text-muted">
-                      Không có đơn hàng nào
+                      No orders
                     </td>
                   </tr>
                 ) : (
@@ -230,11 +222,11 @@ export default function StaffOrder() {
                       </td>
                       <td className="text-center">
                         {order.order_type === "DELIVERY" ? (
-                          <Badge bg="info">🚚 Giao hàng</Badge>
+                          <Badge bg="info">Delivery</Badge>
                         ) : order.order_type === "TAKEAWAY" ? (
-                          <Badge bg="warning">🛍️ Mang về</Badge>
+                          <Badge bg="warning">Take away</Badge>
                         ) : (
-                          <Badge bg="primary">🏠 Tại quán</Badge>
+                          <Badge bg="primary">At place</Badge>
                         )}
                       </td>
                       {/* <td>{order.payment_method}</td> */}
@@ -256,22 +248,21 @@ export default function StaffOrder() {
                             variant="outline-info"
                             onClick={() => handleView(order.order_id)}
                           >
-                            Xem
+                            Details
                           </Button>
                           <Button
                             size="sm"
                             variant="success"
                             onClick={() => handleApproveSingle(order.order_id)}
                           >
-                            Duyệt
+                            Approve
                           </Button>
-                          {/* BỔ SUNG: Nút hủy 1 đơn */}
                           <Button
                             size="sm"
                             variant="outline-danger"
                             onClick={() => handleCancelSingle(order.order_id)}
                           >
-                            Hủy
+                            Cancel
                           </Button>
                         </div>
                       </td>
@@ -283,8 +274,6 @@ export default function StaffOrder() {
           </div>
         </Card.Body>
       </Card>
-
-      {/* 🔍 Modal Chi tiết đơn (Giữ nguyên) */}
       <Modal
         show={showModal}
         onHide={() => setShowModal(false)}
@@ -292,27 +281,27 @@ export default function StaffOrder() {
         centered
       >
         <Modal.Header closeButton className="bg-light">
-          <Modal.Title>Chi tiết đơn #{selectedOrder?.order_id}</Modal.Title>
+          <Modal.Title>Order details #{selectedOrder?.order_id}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedOrder ? (
             <>
               <div className="mb-3">
                 <p className="mb-1">
-                  <strong>Khách hàng:</strong> {selectedOrder.customer_name} (
+                  <strong>Customer:</strong> {selectedOrder.customer_name} (
                   {selectedOrder.customer_phone})
                 </p>
                 <p className="mb-1">
-                  <strong>Loại đơn:</strong> {selectedOrder.order_type}
+                  <strong>Order type:</strong> {selectedOrder.order_type}
                 </p>
                 {selectedOrder.delivery_address && (
                   <p className="mb-1">
-                    <strong>Địa chỉ:</strong> {selectedOrder.delivery_address}
+                    <strong>Address:</strong> {selectedOrder.delivery_address}
                   </p>
                 )}
                 {selectedOrder.scheduled_time && (
                   <p className="mb-1">
-                    <strong>Thời gian mong muốn:</strong>{" "}
+                    <strong>Desired time:</strong>{" "}
                     {new Date(selectedOrder.scheduled_time).toLocaleString()}
                   </p>
                 )}
@@ -322,11 +311,11 @@ export default function StaffOrder() {
                 <Table bordered hover size="sm" className="text-center">
                   <thead className="table-secondary">
                     <tr>
-                      <th>Món</th>
-                      <th>SL</th>
-                      <th>Giá</th>
+                      <th>Dish</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
                       <th>Option</th>
-                      <th>Tổng</th>
+                      <th>Unit price</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -351,7 +340,7 @@ export default function StaffOrder() {
 
               <div className="text-end mt-3">
                 <h5 className="fw-bold">
-                  Tổng cộng:{" "}
+                  Total:{" "}
                   <span className="text-success">
                     {selectedOrder.final_price.toLocaleString()}₫
                   </span>
@@ -360,7 +349,7 @@ export default function StaffOrder() {
             </>
           ) : (
             <div className="text-center py-3 text-muted">
-              Đang tải chi tiết...
+              Loading details...
             </div>
           )}
         </Modal.Body>

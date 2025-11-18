@@ -253,43 +253,42 @@ export default function StaffMenu() {
         await API.put(`/menu/update/${editingItem.item_id}`, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        alert("Cập nhật món ăn thành công!");
+        alert("Recipe updated successfully");
       } else {
         await API.post("/menu/create", data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        alert("Thêm món ăn thành công!");
+        alert("Add dish successfully");
       }
 
       handleCloseModal();
       fetchMenu();
     } catch (err) {
-      console.error("Lỗi thêm/cập nhật:", err);
-      alert(err.response?.data?.message || "Có lỗi xảy ra");
+      console.error("Add/Update Error:", err);
+      alert(err.response?.data?.message || "An error occurred.");
     }
   };
 
   // Delete
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa món ăn này?")) {
+    if (window.confirm("Are you sure you want to delete this dish?")) {
       try {
         await API.delete(`/menu/delete/${id}`);
-        alert("Xóa thành công!");
+        alert("Deleted successfully");
         fetchMenu();
       } catch (err) {
-        console.error("Lỗi xóa:", err);
-        alert(err.response?.data?.message || "Lỗi khi xóa món ăn");
+        console.error("Deletion error:", err);
+        alert(err.response?.data?.message || "Error deleting dish");
       }
     }
   };
 
-  // helper to show preview image url for file or existing url
   const getImagePreviewUrl = () => {
     if (!formData.image) return null;
     if (formData.image instanceof File) {
       return URL.createObjectURL(formData.image);
     }
-    return formData.image; // assumed already a full url string
+    return formData.image;
   };
 
   return (
@@ -332,14 +331,14 @@ export default function StaffMenu() {
           <Table striped bordered hover responsive className="align-middle">
             <thead className="table-light">
               <tr>
-                <th>Ảnh</th>
-                <th>Tên món</th>
-                <th>Giá</th>
-                <th>Danh mục</th>
-                <th>Số lượng</th>
-                <th>Trạng thái</th>
-                <th>Mô tả</th>
-                <th>Thao tác</th>
+                <th>Image</th>
+                <th>Dish name</th>
+                <th>Price</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Status</th>
+                <th>Describe</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -380,9 +379,9 @@ export default function StaffMenu() {
                   <td>{item.stock_quantity ?? "—"}</td>
                   <td>
                     {item.is_available ? (
-                      <span className="badge bg-success">Còn hàng</span>
+                      <span className="badge bg-success">In stock</span>
                     ) : (
-                      <span className="badge bg-danger">Hết hàng</span>
+                      <span className="badge bg-danger">Out of stock</span>
                     )}
                   </td>
                   <td style={{ minWidth: "150px" }}>{item.description}</td>
@@ -393,7 +392,7 @@ export default function StaffMenu() {
                       onClick={() => handleShowModal(item)}
                       className="me-2 mb-1"
                     >
-                      Sửa
+                      Edit
                     </Button>
                     <Button
                       size="sm"
@@ -401,7 +400,7 @@ export default function StaffMenu() {
                       onClick={() => handleDelete(item.item_id)}
                       className="mb-1"
                     >
-                      Xóa
+                      Delete
                     </Button>
                   </td>
                 </tr>
@@ -418,7 +417,7 @@ export default function StaffMenu() {
       >
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingItem ? "Sửa món ăn" : "Thêm món ăn"}
+            {editingItem ? "Edit dish" : "Add new dish"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -426,7 +425,7 @@ export default function StaffMenu() {
             <Row>
               <Col md={8}>
                 <Form.Group className="mb-2">
-                  <Form.Label>Tên món</Form.Label>
+                  <Form.Label>Dish name</Form.Label>
                   <Form.Control
                     name="name"
                     value={formData.name}
@@ -436,7 +435,7 @@ export default function StaffMenu() {
                 </Form.Group>
 
                 <Form.Group className="mb-2">
-                  <Form.Label>Giá</Form.Label>
+                  <Form.Label>Price</Form.Label>
                   <Form.Control
                     type="number"
                     name="price"
@@ -447,7 +446,7 @@ export default function StaffMenu() {
                 </Form.Group>
 
                 <Form.Group className="mb-2">
-                  <Form.Label>Mô tả</Form.Label>
+                  <Form.Label>Describe</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={2}
@@ -458,14 +457,14 @@ export default function StaffMenu() {
                 </Form.Group>
 
                 <Form.Group className="mb-2">
-                  <Form.Label>Danh mục</Form.Label>
+                  <Form.Label>Category</Form.Label>
                   <Form.Select
                     name="category_id"
                     value={formData.category_id}
                     onChange={handleChange}
                     required
                   >
-                    <option value="">-- Chọn danh mục --</option>
+                    <option value="">Category choosing</option>
                     {categories.map((c) => (
                       <option key={c.category_id} value={c.category_id}>
                         {c.food_type}
@@ -475,7 +474,7 @@ export default function StaffMenu() {
                 </Form.Group>
 
                 <Form.Group className="mb-2">
-                  <Form.Label>Ảnh món ăn</Form.Label>
+                  <Form.Label>Dish image</Form.Label>
                   <Form.Control
                     type="file"
                     name="image"
@@ -500,7 +499,7 @@ export default function StaffMenu() {
 
               <Col md={4}>
                 <Form.Group className="mb-2">
-                  <Form.Label>Trạng thái</Form.Label>
+                  <Form.Label>Status</Form.Label>
                   <Form.Select
                     name="is_available"
                     value={
@@ -513,13 +512,13 @@ export default function StaffMenu() {
                     }
                     disabled
                   >
-                    <option value={1}>Còn hàng</option>
-                    <option value={0}>Hết hàng</option>
+                    <option value={1}>In stock</option>
+                    <option value={0}>Out of stock</option>
                   </Form.Select>
                 </Form.Group>
 
                 <Form.Group className="mb-2">
-                  <Form.Label>Số lượng</Form.Label>
+                  <Form.Label>Quantity</Form.Label>
                   <Form.Control
                     type="number"
                     min="0"
@@ -534,15 +533,15 @@ export default function StaffMenu() {
             <hr />
             <div>
               <div className="d-flex justify-content-between align-items-center">
-                <h5>Tùy chỉnh món (Options)</h5>
+                <h5>Customize dish (Options)</h5>
                 <Button size="sm" variant="outline-primary" onClick={addGroup}>
-                  + Thêm nhóm tùy chỉnh
+                  + Add custom group
                 </Button>
               </div>
 
               {optionsDef.length === 0 && (
                 <div className="mt-2 text-muted">
-                  Chưa có nhóm tùy chỉnh nào
+                  No custom groups yet
                 </div>
               )}
 
@@ -551,19 +550,19 @@ export default function StaffMenu() {
                   <Row className="align-items-center">
                     <Col md={6}>
                       <Form.Group>
-                        <Form.Label>Tên nhóm</Form.Label>
+                        <Form.Label>Group name</Form.Label>
                         <Form.Control
                           value={g.name}
                           onChange={(e) =>
                             updateGroupField(gi, "name", e.target.value)
                           }
-                          placeholder="Ví dụ: Kích thước, Topping"
+                          placeholder="Example: Size, Topping"
                         />
                       </Form.Group>
                     </Col>
                     <Col md={3}>
                       <Form.Group>
-                        <Form.Label>Loại chọn</Form.Label>
+                        <Form.Label>Selected type</Form.Label>
                         <Form.Select
                           value={g.selection_type}
                           onChange={(e) =>
@@ -581,7 +580,7 @@ export default function StaffMenu() {
                     </Col>
                     <Col md={2}>
                       <Form.Group>
-                        <Form.Label>Bắt buộc</Form.Label>
+                        <Form.Label>Required selection?</Form.Label>
                         <Form.Select
                           value={g.is_required ? 1 : 0}
                           onChange={(e) =>
@@ -592,8 +591,8 @@ export default function StaffMenu() {
                             )
                           }
                         >
-                          <option value={0}>Không</option>
-                          <option value={1}>Có</option>
+                          <option value={0}>No</option>
+                          <option value={1}>Yes</option>
                         </Form.Select>
                       </Form.Group>
                     </Col>
@@ -611,20 +610,20 @@ export default function StaffMenu() {
                   {/* choices */}
                   <div className="mt-2">
                     <div className="d-flex justify-content-between align-items-center mb-1">
-                      <small className="text-muted">Lựa chọn (Choices)</small>
+                      <small className="text-muted">Select (Choices)</small>
                       <Button
                         size="sm"
                         variant="outline-success"
                         onClick={() => addChoice(gi)}
                       >
-                        + Thêm lựa chọn
+                        + More options
                       </Button>
                     </div>
 
                     {(g.choices || []).map((c, ci) => (
                       <InputGroup className="mb-2" key={ci}>
                         <Form.Control
-                          placeholder="Tên lựa chọn (ví dụ: Size L, Thêm trứng)"
+                          placeholder="Option name (e.g. Size L, Extra Egg)"
                           value={c.name}
                           onChange={(e) =>
                             updateChoiceField(gi, ci, "name", e.target.value)
@@ -632,7 +631,7 @@ export default function StaffMenu() {
                         />
                         <Form.Control
                           style={{ maxWidth: "140px" }}
-                          placeholder="Giá phụ (vd: 20000)"
+                          placeholder="Additional price (eg 20.000d)"
                           type="number"
                           value={c.price_delta}
                           onChange={(e) =>
@@ -663,10 +662,10 @@ export default function StaffMenu() {
                 onClick={handleCloseModal}
                 className="me-2"
               >
-                Hủy
+                Cancel
               </Button>
               <Button type="submit" variant="success">
-                {editingItem ? "Cập nhật" : "Thêm"}
+                {editingItem ? "Edit" : "Add new"}
               </Button>
             </div>
           </Form>

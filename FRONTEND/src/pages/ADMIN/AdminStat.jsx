@@ -25,7 +25,6 @@ import {
 } from "recharts";
 import { useAdminDashboard } from "./useAdminDashboard"; 
 
-// --- Helpers (Copy từ StaffStat) ---
 const formatCurrency = (value) => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -51,13 +50,11 @@ function StatCard({ title, value, icon, bgColor, isLoading }) {
   );
 }
 
-// --- Biểu đồ cho Admin ---
-
 function RevenueByBranchChart({ data, isLoading }) {
   return (
     <Card className="shadow-sm h-100">
       <Card.Body>
-        <Card.Title>Doanh thu theo chi nhánh</Card.Title>
+        <Card.Title>Revenue by branch</Card.Title>
         {isLoading ? (
           <div className="text-center p-5">
             <Spinner animation="border" />
@@ -70,7 +67,7 @@ function RevenueByBranchChart({ data, isLoading }) {
               <YAxis dataKey="branch_name" type="category" width={100} />
               <Tooltip formatter={(value) => formatCurrency(value)} />
               <Legend />
-              <Bar dataKey="total_revenue" fill="#8884d8" name="Doanh thu" />
+              <Bar dataKey="total_revenue" fill="#8884d8" name="Revenue" />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -83,7 +80,7 @@ function RatingByBranchChart({ data, isLoading }) {
   return (
     <Card className="shadow-sm h-100">
       <Card.Body>
-        <Card.Title>Đánh giá trung bình theo chi nhánh</Card.Title>
+        <Card.Title>Average rating by branch</Card.Title>
         {isLoading ? (
           <div className="text-center p-5">
             <Spinner animation="border" />
@@ -113,7 +110,7 @@ function CustomerGrowthChart({ data, isLoading }) {
   return (
     <Card className="shadow-sm h-100">
       <Card.Body>
-        <Card.Title>Khách hàng mới (12 tháng qua)</Card.Title>
+        <Card.Title>New customers (past 12 months)</Card.Title>
         {isLoading ? (
           <div className="text-center p-5">
             <Spinner animation="border" />
@@ -130,7 +127,7 @@ function CustomerGrowthChart({ data, isLoading }) {
                 type="monotone"
                 dataKey="new_customers"
                 stroke="#ff7300"
-                name="Khách hàng mới"
+                name="New customers"
               />
             </LineChart>
           </ResponsiveContainer>
@@ -148,7 +145,7 @@ function TopItemsChart({ data, isLoading }) {
   return (
     <Card className="shadow-sm h-100">
       <Card.Body>
-        <Card.Title>Top 10 món bán chạy</Card.Title>
+        <Card.Title>Top 10 best-selling items</Card.Title>
         {isLoading ? (
           <div className="text-center p-5">
             <Spinner animation="border" />
@@ -210,21 +207,19 @@ function TopItemsChart({ data, isLoading }) {
   );
 }
 
-// --- Component Chính ---
 export default function AdminStat() {
   const { dashboardData, isLoading, isError } = useAdminDashboard();
 
   if (isError) {
     return (
       <Alert variant="danger">
-        <Alert.Heading>Lỗi!</Alert.Heading>
-        <p>Không thể tải dữ liệu dashboard. Vui lòng thử lại.</p>
+        <Alert.Heading>Error</Alert.Heading>
+        <p>Unable to load dashboard data. Please try again.</p>
         <pre>{isError.response?.data?.message || isError.message}</pre>
       </Alert>
     );
   }
 
-  // Gán giá trị mặc định khi đang loading
   const data = dashboardData || {
     kpi: {
       revenue: {},
@@ -242,13 +237,11 @@ export default function AdminStat() {
 
   return (
     <Container fluid>
-      <h2 className="mb-4">Dashboard toàn hệ thống</h2>
-
-      {/* Hàng 1: 4 Thẻ KPI chính */}
+      <h2 className="mb-4">System-wide dashboard</h2>
       <Row>
         <Col md={6} lg={3}>
           <StatCard
-            title="Doanh thu hôm nay"
+            title="Today's revenue"
             value={formatCurrency(data.kpi.revenue.today)}
             icon="bi-cash-coin"
             bgColor="bg-success"
@@ -257,7 +250,7 @@ export default function AdminStat() {
         </Col>
         <Col md={6} lg={3}>
           <StatCard
-            title="Đơn hàng hôm nay"
+            title="Today's orders"
             value={data.kpi.orders.today || 0}
             icon="bi-receipt"
             bgColor="bg-info"
@@ -266,7 +259,7 @@ export default function AdminStat() {
         </Col>
         <Col md={6} lg={3}>
           <StatCard
-            title="Tổng khách hàng"
+            title="Total customers"
             value={data.kpi.users.customers || 0}
             icon="bi-people"
             bgColor="bg-primary"
@@ -275,7 +268,7 @@ export default function AdminStat() {
         </Col>
         <Col md={6} lg={3}>
           <StatCard
-            title="Tổng nhân viên"
+            title="Total staff"
             value={data.kpi.users.total_staff || 0}
             icon="bi-person-badge"
             bgColor="bg-secondary"
@@ -284,29 +277,28 @@ export default function AdminStat() {
         </Col>
       </Row>
 
-      {/* Hàng 2: Trạng thái đơn hàng + Doanh thu/Đơn tuần/tháng */}
       <Row>
         <Col lg={5}>
           <Card className="shadow-sm mb-3">
             <Card.Header>
-              <Card.Title className="mb-0">Trạng thái đơn (Live)</Card.Title>
+              <Card.Title className="mb-0">Order status (Live)</Card.Title>
             </Card.Header>
             <Card.Body className="text-center">
               <Row>
                 <Col>
-                  <h5>Đang chờ</h5>
+                  <h5>Pending</h5>
                   <h3 className="text-info">
                     {isLoading ? <Spinner size="sm" /> : data.kpi.order_status.pending}
                   </h3>
                 </Col>
                 <Col>
-                  <h5>Đang chuẩn bị</h5>
+                  <h5>Preparing</h5>
                   <h3 className="text-secondary">
                     {isLoading ? <Spinner size="sm" /> : data.kpi.order_status.preparing}
                   </h3>
                 </Col>
                 <Col>
-                  <h5>Đang giao</h5>
+                  <h5>In delivery</h5>
                   <h3 className="text-primary">
                     {isLoading ? <Spinner size="sm" /> : data.kpi.order_status.delivery}
                   </h3>
@@ -318,18 +310,18 @@ export default function AdminStat() {
         <Col lg={7}>
           <Card className="shadow-sm mb-3">
             <Card.Header>
-              <Card.Title className="mb-0">Tổng quan Tuần / Tháng</Card.Title>
+              <Card.Title className="mb-0">Weekly / Monthly Overview</Card.Title>
             </Card.Header>
             <Card.Body>
               <Row>
                 <Col>
-                  <strong>Doanh thu tuần:</strong>
+                  <strong>Weekly revenue:</strong>
                   <p className="fs-5 text-success">
                     {isLoading ? <Spinner size="sm" /> : formatCurrency(data.kpi.revenue.week)}
                   </p>
                 </Col>
                 <Col>
-                  <strong>Doanh thu tháng:</strong>
+                  <strong>Monthly revenue:</strong>
                   <p className="fs-5 text-success">
                     {isLoading ? <Spinner size="sm" /> : formatCurrency(data.kpi.revenue.month)}
                   </p>
@@ -337,13 +329,13 @@ export default function AdminStat() {
               </Row>
               <Row>
                  <Col>
-                  <strong>Đơn hàng tuần:</strong>
+                  <strong>Weekly orders:</strong>
                   <p className="fs-5 text-info">
                     {isLoading ? <Spinner size="sm" /> : data.kpi.orders.week}
                   </p>
                 </Col>
                 <Col>
-                  <strong>Đơn hàng tháng:</strong>
+                  <strong>Monthly orders:</strong>
                   <p className="fs-5 text-info">
                     {isLoading ? <Spinner size="sm" /> : data.kpi.orders.month}
                   </p>
@@ -353,8 +345,6 @@ export default function AdminStat() {
           </Card>
         </Col>
       </Row>
-
-      {/* Hàng 3: Biểu đồ Doanh thu + Rating */}
       <Row>
         <Col lg={7}>
           <RevenueByBranchChart
@@ -369,8 +359,6 @@ export default function AdminStat() {
           />
         </Col>
       </Row>
-
-      {/* Hàng 4: Tăng trưởng KH + Top 10 */}
       <Row className="mt-3">
         <Col lg={6}>
           <CustomerGrowthChart

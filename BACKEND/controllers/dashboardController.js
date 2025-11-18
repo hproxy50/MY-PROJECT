@@ -27,8 +27,8 @@ export const getStaffDashboardMetrics = async (req, res) => {
       total_revenue: Number(totalRevenue),
     });
   } catch (error) {
-    console.error("Lỗi khi lấy dữ liệu dashboard:", error);
-    res.status(500).json({ message: "Lỗi máy chủ" });
+    console.error("Error when retrieving dashboard data:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -41,7 +41,7 @@ export const getStaffDashboardSummary = async (req, res) => {
         .json({ message: "The employee has not been assigned to any branch" });
     }
 
-    // 1. Doanh thu (Ngày, Tuần, Tháng)
+    // 1. Revenue (Day, Week, Month)
     const [revenueData] = await db.query(
       `
       SELECT 
@@ -55,7 +55,7 @@ export const getStaffDashboardSummary = async (req, res) => {
       [staffBranchId]
     );
 
-    // 2. Trạng thái đơn hàng
+    // 2. Order status
     const [orderStatusData] = await db.query(
       `
       SELECT 
@@ -70,16 +70,15 @@ export const getStaffDashboardSummary = async (req, res) => {
       [staffBranchId]
     );
 
-    // Chuyển mảng kết quả thành object cho dễ dùng
     const order_counts = orderStatusData.reduce(
       (acc, item) => {
         acc[item.status.toLowerCase()] = item.count;
         return acc;
       },
       { pending: 0, preparing: 0, delivery: 0, completed: 0 }
-    ); // Đảm bảo có giá trị default
+    );
 
-    // 3. Tình trạng kho
+    // 3. Warehouse status
     const [stockData] = await db.query(
       `
       SELECT 
@@ -91,7 +90,7 @@ export const getStaffDashboardSummary = async (req, res) => {
       [staffBranchId]
     );
 
-    // 4. Biểu đồ: Doanh thu 7 ngày qua
+    // 4. Chart: Revenue for the last 7 days
     const [revenueByDayData] = await db.query(
       `
       SELECT 
@@ -108,7 +107,7 @@ export const getStaffDashboardSummary = async (req, res) => {
       [staffBranchId]
     );
 
-    // 5. Biểu đồ: Top 5 món bán chạy
+    // 5. Chart: Top 5 best-selling items
     const [topItemsData] = await db.query(
       `
       SELECT 
@@ -126,7 +125,7 @@ export const getStaffDashboardSummary = async (req, res) => {
       [staffBranchId]
     );
 
-    // 6. Biểu đồ: Rating trung bình
+    // 6. Chart: Average Rating
     const [ratingData] = await db.query(
       `
       SELECT 
@@ -138,7 +137,6 @@ export const getStaffDashboardSummary = async (req, res) => {
       [staffBranchId]
     );
 
-    // Trả về tất cả dữ liệu
     res.json({
       revenue: {
         today: Number(revenueData[0].revenue_today),

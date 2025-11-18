@@ -19,14 +19,11 @@ export default function StaffProduct() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // === THAY ĐỔI STATE: Quản lý phiếu nhập kho ===
-  const [showSlip, setShowSlip] = useState(false); // Trạng thái đóng/mở Offcanvas
-  const [importCart, setImportCart] = useState(new Map()); // Dùng Map: { item_id => { name, quantity } }
+  const [showSlip, setShowSlip] = useState(false);
+  const [importCart, setImportCart] = useState(new Map());
   const [importNote, setImportNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // ===========================================
 
-  // Hàm lấy danh sách sản phẩm (từ menuController)
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
@@ -34,8 +31,8 @@ export default function StaffProduct() {
       const res = await API.get("/menu");
       setMenuItems(res.data);
     } catch (err) {
-      console.error("Lỗi lấy danh sách món ăn:", err);
-      setError("Không thể tải danh sách sản phẩm.");
+      console.error("Error getting list of dishes:", err);
+      setError("Unable to load product list.");
     } finally {
       setLoading(false);
     }
@@ -45,18 +42,14 @@ export default function StaffProduct() {
     fetchMenuItems();
   }, []);
 
-  // === CÁC HÀM MỚI QUẢN LÝ PHIẾU NHẬP ===
-
-  // Thêm item vào phiếu
   const handleAddItem = (item) => {
     setImportCart((prevCart) => {
       const newCart = new Map(prevCart);
-      newCart.set(item.item_id, { name: item.name, quantity: 1 }); // Mặc định số lượng là 1
+      newCart.set(item.item_id, { name: item.name, quantity: 1 }); //auto1
       return newCart;
     });
   };
 
-  // Xóa item khỏi phiếu
   const handleRemoveItem = (itemId) => {
     setImportCart((prevCart) => {
       const newCart = new Map(prevCart);
@@ -65,9 +58,7 @@ export default function StaffProduct() {
     });
   };
 
-  // Cập nhật số lượng trong phiếu
   const handleUpdateQuantity = (itemId, quantity) => {
-    // Cho phép rỗng khi đang gõ, nhưng mặc định là 1 nếu xóa hết
     const newQuantity = Math.max(1, parseInt(quantity) || 1);
     setImportCart((prevCart) => {
       const newCart = new Map(prevCart);
@@ -79,26 +70,23 @@ export default function StaffProduct() {
     });
   };
 
-  // Đóng/Mở phiếu
   const handleCloseSlip = () => setShowSlip(false);
   const handleShowSlip = () => setShowSlip(true);
 
-  // === HÀM SUBMIT ĐÃ VIẾT LẠI HOÀN TOÀN ===
   const handleImportSubmit = async () => {
     if (importCart.size === 0) {
-      alert("Phiếu nhập đang trống. Vui lòng thêm sản phẩm.");
+      alert("The receipt is empty. Please add products.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // 1. Tạo phiếu nhập mới
+      
       const importRes = await API.post("/import", {
-        note: importNote || "Phiếu nhập kho hàng loạt",
+        note: importNote || "Bulk warehouse receipt",
       });
       const import_id = importRes.data.import_id;
 
-      // 2. Chuẩn bị mảng 'items' để gửi
       const itemsToSubmit = Array.from(importCart.entries()).map(
         ([item_id, data]) => ({
           item_id: item_id,
@@ -106,36 +94,31 @@ export default function StaffProduct() {
         })
       );
 
-      // 3. Thêm TẤT CẢ item vào phiếu nhập (API mới)
-      // (Khớp với backend 'addItemToImport' đã sửa)
       await API.post("/import/add", {
         import_id: import_id,
-        items: itemsToSubmit, // Gửi mảng items
+        items: itemsToSubmit,
       });
 
-      // 4. Hoàn tất phiếu nhập (trigger cộng stock)
-      // (Khớp với backend 'completeImport')
       await API.put(`/import/confirm/${import_id}`);
 
-      alert("Nhập kho hàng loạt thành công!");
+      alert("Bulk import successful!");
       handleCloseSlip();
-      setImportCart(new Map()); // Xóa giỏ hàng
+      setImportCart(new Map());
       setImportNote("");
-      fetchMenuItems(); // Tải lại danh sách để cập nhật stock
+      fetchMenuItems();
     } catch (err) {
-      console.error("Lỗi khi nhập kho:", err);
-      alert(err.response?.data?.message || "Có lỗi xảy ra khi nhập kho.");
+      console.error("Error when importing:", err);
+      alert(err.response?.data?.message || "An error occurred while importing");
     } finally {
       setIsSubmitting(false);
     }
   };
-  // === KẾT THÚC HÀM SUBMIT MỚI ===
 
   if (loading) {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-2">Đang tải sản phẩm...</p>
+        <p className="mt-2">Loading products...</p>
       </div>
     );
   }
@@ -146,15 +129,14 @@ export default function StaffProduct() {
         <Card.Header className="p-3">
           <Row className="justify-content-between align-items-center">
             <Col xs="auto">
-              <h3 className="mb-0">📦 Quản lý Kho hàng</h3>
+              <h3 className="mb-0">Warehouse Management</h3>
             </Col>
-            {/* THAY ĐỔI: Thêm nút "Phiếu nhập" */}
             <Col xs="auto" className="d-flex gap-2">
               <Button variant="outline-primary" onClick={fetchMenuItems}>
-                Tải lại
+                Reload
               </Button>
               <Button variant="success" onClick={handleShowSlip}>
-                Phiếu nhập
+                Import
                 {importCart.size > 0 && (
                   <Badge pill bg="danger" className="ms-2">
                     {importCart.size}
@@ -167,26 +149,23 @@ export default function StaffProduct() {
         <Card.Body>
           {error && <Alert variant="danger">{error}</Alert>}
           <p className="text-muted">
-            Chọn "Thêm" để đưa sản phẩm vào phiếu nhập kho hàng loạt.
+          Select "Add" to add the product to the bulk receipt.
           </p>
-
           <Table striped bordered hover responsive className="align-middle">
             <thead className="table-light">
               <tr>
-                <th>Sản phẩm</th>
-                <th>Danh mục</th>
-                <th>Tồn kho</th>
-                <th>Trạng thái</th>
-                <th className="text-center">Hành động</th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Inventory</th>
+                <th>Status</th>
+                <th className="text-center">Action</th>
               </tr>
             </thead>
             <tbody>
               {menuItems.map((item) => {
-                // Kiểm tra xem item đã có trong phiếu nhập chưa
                 const isItemInCart = importCart.has(item.item_id);
                 return (
                   <tr key={item.item_id}>
-                    {/* Tên và Ảnh */}
                     <td>
                       <div className="d-flex align-items-center">
                         {item.image ? (
@@ -222,25 +201,17 @@ export default function StaffProduct() {
                         <span className="fw-semibold">{item.name}</span>
                       </div>
                     </td>
-
-                    {/* Danh mục */}
                     <td>{item.food_type}</td>
-
-                    {/* Tồn kho (Đã áp dụng logic bỏ "null") */}
                     <td>
                       <strong className="fs-5">{item.stock_quantity}</strong>
                     </td>
-
-                    {/* Trạng thái (Đã áp dụng logic bỏ "null") */}
                     <td>
                       {item.is_available ? (
-                        <span className="badge bg-success">Còn hàng</span>
+                        <span className="badge bg-success">In stock</span>
                       ) : (
-                        <span className="badge bg-danger">Hết hàng</span>
+                        <span className="badge bg-danger">Out of stock</span>
                       )}
                     </td>
-
-                    {/* THAY ĐỔI: Nút "Thêm" hoặc "Xóa" */}
                     <td className="text-center">
                       {isItemInCart ? (
                         <Button
@@ -248,7 +219,7 @@ export default function StaffProduct() {
                           size="sm"
                           onClick={() => handleRemoveItem(item.item_id)}
                         >
-                          Xóa
+                          Delete
                         </Button>
                       ) : (
                         <Button
@@ -256,7 +227,7 @@ export default function StaffProduct() {
                           size="sm"
                           onClick={() => handleAddItem(item)}
                         >
-                          Thêm
+                          Add new
                         </Button>
                       )}
                     </td>
@@ -267,36 +238,31 @@ export default function StaffProduct() {
           </Table>
         </Card.Body>
       </Card>
-
-      {/* === OFF CANVAS PHIẾU NHẬP (THAY THẾ MODAL) === */}
       <Offcanvas show={showSlip} onHide={handleCloseSlip} placement="end">
         <Offcanvas.Header closeButton>
-          <Offcanvas.Title>Phiếu Nhập Kho</Offcanvas.Title>
+          <Offcanvas.Title>Warehouse Receipt</Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body className="d-flex flex-column">
           {importCart.size === 0 ? (
             <div className="text-center text-muted m-auto">
-              <p>Phiếu nhập đang trống.</p>
-              <small>Vui lòng chọn "Thêm" từ bảng sản phẩm.</small>
+              <p>The import form is blank.</p>
+              <small>Please select "Add" from the product table</small>
             </div>
           ) : (
             <>
-              {/* Phần nội dung (cho phép cuộn) */}
               <div className="flex-grow-1" style={{ overflowY: "auto" }}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Ghi chú (Không bắt buộc)</Form.Label>
+                  <Form.Label>Note (Optional)</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={2}
                     value={importNote}
                     onChange={(e) => setImportNote(e.target.value)}
-                    placeholder="Ví dụ: Nhập hàng đợt 1 từ nhà cung cấp A"
+                    placeholder="Example: Import the first batch of goods from supplier A"
                   />
                 </Form.Group>
-
                 <hr />
-                <h5 className="mb-3">Sản phẩm cần nhập</h5>
-
+                <h5 className="mb-3">Products to be imported</h5>
                 <div className="d-flex flex-column gap-3">
                   {Array.from(importCart.entries()).map(
                     ([itemId, itemData]) => (
@@ -309,11 +275,11 @@ export default function StaffProduct() {
                             className="text-danger p-0"
                             onClick={() => handleRemoveItem(itemId)}
                           >
-                            Xóa
+                            Delete
                           </Button>
                         </div>
                         <InputGroup>
-                          <InputGroup.Text>Số lượng</InputGroup.Text>
+                          <InputGroup.Text>Quantity</InputGroup.Text>
                           <Form.Control
                             type="number"
                             min="1"
@@ -329,8 +295,6 @@ export default function StaffProduct() {
                   )}
                 </div>
               </div>
-
-              {/* Phần Footer (Nút xác nhận) */}
               <div className="d-grid mt-4">
                 <Button
                   variant="primary"
@@ -340,11 +304,10 @@ export default function StaffProduct() {
                 >
                   {isSubmitting ? (
                     <>
-                      <Spinner as="span" animation="border" size="sm" /> Đang xử
-                      lý...
+                      <Spinner as="span" animation="border" size="sm" />Loading...
                     </>
                   ) : (
-                    `Xác nhận nhập ${importCart.size} món`
+                    `Confirm import of ${importCart.size} item`
                   )}
                 </Button>
               </div>
