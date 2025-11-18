@@ -2,6 +2,9 @@
 import db from "../config/db.js";
 import bcrypt from "bcrypt";
 
+// const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
+// const passwordRequirementMessage = "Password must contain at least 8 characters, including 1 number and 1 special character (!@#$%^&*).";
+
 export const getAllUsers = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -62,6 +65,12 @@ export const createCustomer = async (req, res) => {
         message: "Invalid phone number. Must contain 9-11 digits only.",
       });
     }
+
+    // if (!passwordRegex.test(password)) {
+    //   return res.status(400).json({
+    //     message: passwordRequirementMessage,
+    //   });
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 

@@ -24,7 +24,7 @@ const Header = ({ orderId, cartCount, branchId }) => {
               }
             }}
           />
-          <p>Pizza Restaurant</p>
+          <p>Hung Snack Conner</p>
         </div>
 
         <div className="header-Top-Right">

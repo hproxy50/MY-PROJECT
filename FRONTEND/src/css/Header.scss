@@ -13,7 +13,7 @@
     align-items: center; // Căn giữa theo chiều dọc
     justify-content: space-between; // Phân bổ đều khoảng cách giữa các phần
     padding: 15px 40px; // Thêm padding cho header top
-    gap: 30px; // Khoảng cách giữa các phần tử con
+    gap: 20px; // Khoảng cách giữa các phần tử con
 
     // --- Logo và tên thương hiệu (bên trái) ---
     &-Left {
@@ -30,8 +30,9 @@
 
       p {
         color: #ffffff; // Màu chữ trắng
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 19px;
+        font-weight: bolder;
+        font-family:"Lucida Handwriting", cursive;
         margin: 0; // Xóa margin mặc định
         white-space: nowrap; // Không cho text xuống dòng
       }
@@ -214,6 +215,7 @@
 //     }
 //   }
 // }
+
 
 .search-dropdown {
   position: absolute;

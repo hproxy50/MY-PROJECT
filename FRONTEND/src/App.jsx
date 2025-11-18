@@ -17,6 +17,7 @@ import Shipper from "./pages/Receptionist/Shipper.jsx"
 import ForgotPassword from "./components/ForgotPassword.jsx";
 import ResetPassword from "./components/ResetPassword.jsx";
 import LoginTest from "./pages/AUTH/loginAuth.jsx"
+import Branch from "./pages/CUSTOMER/Branch.jsx";
 
 function App() {
   return (
@@ -28,6 +29,8 @@ function App() {
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+      <Route path="/branch-test" element={<Branch />} />
 
       {/* CUSTOMER */}
       <Route path="/branches" element={<BranchSelectPage />} />

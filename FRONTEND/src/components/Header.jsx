@@ -80,7 +80,7 @@ const Header = ({
               }
             }}
           />
-          <p>Pizza Restaurant</p>
+          <p className="store-title">Hung Snack Conner</p>
         </div>
         <div className="header-Top-Middle" ref={searchRef}>
           <input

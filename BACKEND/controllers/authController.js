@@ -9,6 +9,13 @@ export const register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
+    // if (!passwordRegex.test(password)) {
+    //   return res.status(400).json({
+    //     message: "Password must contain at least 8 characters, including 1 number and 1 special character (!@#$%^&*)"
+    //   });
+    // }
+
     const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);

@@ -1,0 +1,88 @@
+.branch {
+    &-body {
+        &-header {
+            padding-top: 20px;
+            padding-left: 50px;
+            padding-right: 50px;
+            background-color: #491f20;
+            display: flex;
+            justify-content: space-between;
+
+            img {
+                width: 80px;
+                height: 80px;
+            }
+
+            &-mid {
+                &-title {
+                    color: whitesmoke;
+                    font-size: 50px;
+                    font-family: "Lucida Handwriting", cursive;
+                    font-weight: bolder;
+                }
+            }
+
+            &-right {
+                &-hotline {
+                    color: whitesmoke;
+                    font-size: medium;
+                    font-weight: bolder;
+                    padding-top: 20px;
+                }
+            }
+        }
+
+        &-mid {
+            padding-top: 20px;
+            padding-left: 50px;
+            padding-right: 100px;
+            padding-bottom: 20px;
+            background-color: rgb(250, 70, 4);
+            display: flex;
+            justify-content: space-between;
+            gap: 50px;
+
+            &-left {
+
+                img {
+                    height: 75vh;
+                    width: 75vh;
+                    border-radius: 10px;
+                }
+            }
+
+            &-right {
+                h1{
+                    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+                }
+                p{
+                    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+                }
+                &-right2 {
+                    p {
+                        margin: 0;
+                    }
+
+                    text-align: center;
+
+                    //background-color: aqua;
+                    button {
+                        margin-bottom: 10px;
+                        width: 80%;
+                        padding: 10px;
+                        border-radius: 25px;
+                        border: 1px solid black;
+                        font-weight: bold;
+                        background-color: rgb(255, 218, 188);
+                        font-size: 20px;
+                    }
+                }
+            }
+        }
+
+        &-bottom {
+            background-color: rgb(250, 98, 4);
+        }
+    }
+}
