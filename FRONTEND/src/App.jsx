@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/AUTH/login";
+//import Login from "./pages/AUTH/login";
 import Register from "./pages/AUTH/register";
 import BranchSelectPage from "./pages/CUSTOMER/BranchSelectPage";
 import Unauthorized from "./pages/OTHER/Unauthorized";
@@ -23,7 +23,7 @@ function App() {
     <Routes>
       {/* ALL USERS */}
       <Route path="/" element={<Navigate to="/login" />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<LoginTest />} />
       <Route path="/register" element={<Register />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -39,7 +39,6 @@ function App() {
       <Route path="/payment-success" element={<PaymentResult />} />
       <Route path="/payment-cancel" element={<PaymentResult />} />
 
-      <Route path="/login-test" element={<LoginTest />} />
 
 
       <Route

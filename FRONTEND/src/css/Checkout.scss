@@ -444,13 +444,10 @@
                         padding-bottom: 15px;
                         border-bottom: 1px solid #dedede;
 
-                        .product-info{
-                            &-name{
-                               
-                            }
-                            &-quantity{
-                               
-                            }
+                        .product-info {
+                            &-name {}
+
+                            &-quantity {}
                         }
 
                         img {
@@ -543,9 +540,7 @@
                         display: flex;
                         justify-content: space-between;
 
-                        .total-price-title {
-                            
-                        }
+                        .total-price-title {}
 
                         .total-price-number {
                             font-weight: 700;
@@ -556,12 +551,24 @@
                     &-discount {
                         display: flex;
                         justify-content: space-between;
-                        .total-price-discount{
+
+                        .total-price-discount {
                             font-weight: 700;
                             color: #ff6633;
                         }
 
-                    }&-payment{
+                    }
+
+                    &-fee {
+                        display: flex;
+                        justify-content: space-between;
+                        &-Feeprice {
+                            font-weight: 700;
+                            color: #ff6633;
+                        }
+                    }
+
+                    &-payment {
                         display: flex;
                         justify-content: space-between;
                         font-weight: bold;

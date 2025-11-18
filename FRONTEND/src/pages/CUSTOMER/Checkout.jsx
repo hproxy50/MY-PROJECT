@@ -10,6 +10,7 @@ import HeaderStatus from "../../components/headerStatus";
 import NoImage from "../../assets/image/NoImage.png";
 import { useNavigate } from "react-router-dom";
 
+const FIXED_SHIPPING_FEE = 20000;
 export default function Checkout() {
   const navigate = useNavigate();
   const [deliveryMethod, setDeliveryMethod] = useState("pickup");
@@ -19,6 +20,7 @@ export default function Checkout() {
   const [checkoutData, setCheckoutData] = useState(null);
   const [CustomerName, setCustomerName] = useState("");
   const [CustomerPhone, setCustomerPhone] = useState("");
+  const currentShippingFee = deliveryMethod === "delivery" ? FIXED_SHIPPING_FEE : 0;
   const [form, setForm] = useState({
     customer_name: "",
     customer_phone: "",
@@ -36,6 +38,16 @@ export default function Checkout() {
   const token = localStorage.getItem("token");
 
   const [timeOptions, setTimeOptions] = useState([]);
+
+  const displayTotalPrice = checkoutData 
+    ? Number(checkoutData.total_price) 
+    : 0;
+    
+  const displayDiscount = checkoutData 
+    ? Number(checkoutData.discount_amount) 
+    : 0;
+
+  const displayFinalPrice = displayTotalPrice + currentShippingFee - displayDiscount;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -716,19 +728,24 @@ export default function Checkout() {
                   <p>Discount: </p>
                   {checkoutData.discount_amount > 0 && (
                     <p className="total-price-discount">
-                      {Number(checkoutData.discount_amount).toLocaleString(
+                      - {Number(checkoutData.discount_amount).toLocaleString(
                         "vi-VN"
                       )}{" "}
                       đ
                     </p>
                   )}
                 </div>
+                {deliveryMethod === "delivery" && (
+                <div className="checkout-page-card-bottom-right-bottom-fee">
+                  <p>Shipping fee</p>
+                  <p className="checkout-page-card-bottom-right-bottom-fee-Feeprice">+ {currentShippingFee.toLocaleString("vi-VN")} đ</p>
+                </div>
+              )}
                 <div className="checkout-page-card-bottom-right-bottom-payment">
                   <p>Payment:</p>
                   {checkoutData.final_price > 0 && (
                     <p className="total-price-payment">
-                      {Number(checkoutData.final_price).toLocaleString("vi-VN")}{" "}
-                      đ
+                    {displayFinalPrice.toLocaleString("vi-VN")} đ
                     </p>
                   )}
                 </div>

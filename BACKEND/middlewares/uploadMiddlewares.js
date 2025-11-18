@@ -17,7 +17,7 @@ const fileFilter = (req, file, cb) => {
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Chỉ cho phép upload ảnh"));
+    cb(new Error("Only allow photo uploads"));
   }
 };
 

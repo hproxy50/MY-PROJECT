@@ -433,9 +433,15 @@ export default function History() {
                     <strong>Total price:</strong>{" "}
                     {Number(selectedOrder.total_price).toLocaleString("vi-VN")}đ
                   </p>
+                  {selectedOrder.order_type === "DELIVERY" && (
+                    <p>
+                      <strong>Shipping fee:</strong>{" "}
+                    + {Number(selectedOrder.shipping_fee).toLocaleString("vi-VN")}đ
+                    </p>
+                  )}
                   <p>
                     <strong>Discount:</strong>{" "}
-                    {Number(selectedOrder.discount_amount).toLocaleString(
+                    - {Number(selectedOrder.discount_amount).toLocaleString(
                       "vi-VN"
                     )}
                     đ

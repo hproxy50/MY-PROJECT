@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ShoppingCart, Phone } from "lucide-react";
 import "../css/Header.scss";
-import LogoImage from "../assets/image/pizza.png";
+import LogoImage from "../assets/image/logo.png";
 
 const Header = ({ orderId, cartCount, branchId }) => {
   const navigate = useNavigate();

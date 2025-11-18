@@ -18,6 +18,7 @@ export const getOrderHistory = async (req, res) => {
           o.total_price,
           o.final_price,
           o.discount_amount,
+          o.shipping_fee,
           o.created_at,
           o.order_type,
           o.payment_method,

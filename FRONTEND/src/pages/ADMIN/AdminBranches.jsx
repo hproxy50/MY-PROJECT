@@ -197,8 +197,8 @@ export default function AdminBranches() {
               <thead className="table-light">
                 <tr>
                   <th>ID</th>
-                  <th>Branch Name</th>
-                  <th>Address</th>
+                  <th>Branch Name and Address</th>
+                  <th>Ward name</th>
                   <th>Phone number</th>
                   <th>Date created</th>
                   <th>Action</th>
@@ -248,7 +248,7 @@ export default function AdminBranches() {
         <Form onSubmit={handleAddSubmit}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Branch Name</Form.Label>
+              <Form.Label>Branch name and address</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
@@ -258,7 +258,7 @@ export default function AdminBranches() {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Address</Form.Label>
+              <Form.Label>Ward name</Form.Label>
               <Form.Control
                 type="text"
                 name="address"
@@ -298,7 +298,7 @@ export default function AdminBranches() {
           <Form onSubmit={handleEditSubmit}>
             <Modal.Body>
               <Form.Group className="mb-3">
-                <Form.Label>Branch Name</Form.Label>
+                <Form.Label>Branch name and address</Form.Label>
                 <Form.Control
                   type="text"
                   name="name"
@@ -308,7 +308,7 @@ export default function AdminBranches() {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Address</Form.Label>
+                <Form.Label>Ward name</Form.Label>
                 <Form.Control
                   type="text"
                   name="address"

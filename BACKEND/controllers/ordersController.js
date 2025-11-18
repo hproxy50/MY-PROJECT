@@ -103,6 +103,8 @@ const checkStockAndClearCartIfUnavailable = async (order_id) => {
   return { success: true };
 };
 
+const FIXED_SHIPPING_FEE = 20000;
+
 export const confirmOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -126,6 +128,7 @@ export const confirmOrder = async (req, res) => {
         .status(404)
         .json({ message: "No shopping cart found to confirm" });
     }
+    const currentOrder = orders[0];
 
     const stockCheck = await checkStockAndClearCartIfUnavailable(id);
     if (!stockCheck.success) {
@@ -154,13 +157,26 @@ export const confirmOrder = async (req, res) => {
       return res.status(400).json({ message: "Please enter shipping address" });
     }
 
+    let shippingFee = 0;
+    if (order_type === "DELIVERY") {
+      shippingFee = FIXED_SHIPPING_FEE;
+    }
+
+    const totalPrice = Number(currentOrder.total_price);
+    const discountAmount = Number(currentOrder.discount_amount || 0);
+    let finalPrice = totalPrice - discountAmount + shippingFee;
+
+    if (finalPrice < 0) finalPrice = 0;
+
     await db.query(
       `UPDATE orders 
         SET status='PENDING', 
             customer_name=?, customer_phone=?, 
             order_type=?, scheduled_time=?, delivery_address=?, 
             payment_method=?,
-            message=? 
+            message=?,
+            shipping_fee=?, 
+            final_price=? 
         WHERE order_id=?`,
       [
         customer_name,
@@ -170,11 +186,14 @@ export const confirmOrder = async (req, res) => {
         delivery_address || null,
         payment_method,
         message || null,
+        shippingFee,
+        finalPrice,
         id,
       ]
     );
     return res.json({ message: "Confirm order successful", order_id: id });
   } catch (error) {
+    console.error("Confirm Error: ", error);
     return res.status(500).json({ message: "Server error", error });
   }
 };
@@ -202,6 +221,7 @@ export const confirmOrderQR = async (req, res) => {
         .status(404)
         .json({ message: "No shopping cart found to confirm" });
     }
+    const currentOrder = orders[0];
 
     const stockCheck = await checkStockAndClearCartIfUnavailable(id);
     if (!stockCheck.success) {
@@ -228,13 +248,25 @@ export const confirmOrderQR = async (req, res) => {
       return res.status(400).json({ message: "Please enter shipping address" });
     }
 
+    let shippingFee = 0;
+    if (order_type === "DELIVERY") {
+      shippingFee = FIXED_SHIPPING_FEE;
+    }
+
+    const totalPrice = Number(currentOrder.total_price);
+    const discountAmount = Number(currentOrder.discount_amount || 0);
+    let finalPrice = totalPrice - discountAmount + shippingFee;
+    if (finalPrice < 0) finalPrice = 0;
+
     await db.query(
       `UPDATE orders
         SET status='PENDING',
             customer_name=?, customer_phone=?,
             order_type=?, scheduled_time=?, delivery_address=?, 
             payment_method=?,
-            message=?
+            message=?,
+            shipping_fee=?,
+            final_price=?
         WHERE order_id=? AND status='DRAFT'`,
       [
         customer_name,
@@ -244,6 +276,8 @@ export const confirmOrderQR = async (req, res) => {
         delivery_address || null,
         payment_method,
         message || null,
+        shippingFee,
+        finalPrice,
         id,
       ]
     );
