@@ -89,8 +89,8 @@
             padding: 10px;
             border-radius: 5px;
             font-weight: bold;
-            cursor: pointer; 
-            transition: background-color 0.2s, color 0.2s; 
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
 
             &:hover {
                 background-color: rgb(255, 123, 0);
@@ -99,7 +99,7 @@
 
             &.all-branches-active {
                 background-color: rgb(255, 123, 0);
-                color: white; 
+                color: white;
             }
         }
     }
@@ -177,6 +177,10 @@
 
                 &-detail {
                     background-color: orange;
+                }
+
+                &-canceled {
+                    background-color: red;
                 }
 
                 button {
@@ -389,6 +393,71 @@
         to {
             opacity: 1;
             transform: scale(1);
+        }
+    }
+
+    .modalCancel {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+
+        &-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
+            h3 {
+                margin-bottom: 15px;
+                color: #333;
+            }
+
+            p {
+                margin-bottom: 25px;
+                color: #666;
+            }
+        }
+
+        &-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+
+            button {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: 0.2s;
+
+                &.btn-confirm {
+                    background-color: #ff4d4f;
+                    color: white;
+
+                    &:hover {
+                        background-color: #d9363e;
+                    }
+                }
+
+                &.btn-closeee {
+                    background-color: #e0e0e0;
+                    color: #333;
+
+                    &:hover {
+                        background-color: #d0d0d0;
+                    }
+                }
+            }
         }
     }
 

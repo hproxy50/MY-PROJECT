@@ -83,7 +83,7 @@ export default function Login() {
               </button>
             </form>
             <p className="Login-body-right-register">
-              No account yet? <Link to="/register">Register</Link>
+              No account yet? <Link to="/register" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 'bold' }}>Register</Link>
             </p>
           </div>
         </div>

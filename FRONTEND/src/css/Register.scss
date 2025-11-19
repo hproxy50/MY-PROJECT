@@ -1,0 +1,72 @@
+.register {
+    color: white;
+    &-body {
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+
+        &-left {
+            flex: 1;
+
+            img {
+                height: 100vh;
+                width: 100%;
+
+            }
+        }
+
+        &-right {
+            background-color:#491f20;
+            flex: 1;
+
+            &-form {
+                h1 {
+                    font-size: 80px;
+                    font-weight: bolder;
+                    font-family: "Lucida Handwriting", cursive;
+                }
+
+                margin-top: 120px;
+                text-align: center;
+
+                &-input {
+                    margin-top: 80px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+
+                    input {
+                        border: none;
+                        background-color: rgba(255, 236, 197, 0.732);
+                        height: 50px;
+                        width: 50%;
+                        margin-left: 25%;
+                        padding: 20px;
+                        border-radius:
+                            5px;
+                    }
+                }
+
+                &-forgot {
+                    margin-top: 5px;
+                    margin-left: 260px;
+                }
+
+                button {
+                    margin-top: 20px;
+                    border-radius: 25px;
+                    height: 50px;
+                    border: none;
+                    width: 50%;
+                    background-color: rgb(248, 189, 94);
+                    font-weight: bolder;
+                    font-family: 'Courier New', Courier, monospace;
+                    font-size: larger;
+                }
+            }
+            &-register {
+                margin-top: 20px;
+            }
+        }
+    }
+}

@@ -81,6 +81,7 @@ export default function Checkout() {
     // const startHour = Math.max(8, currentHour + 1);
     const startHour = currentHour + 1;
     const endHour = 23;
+    //const endHour = 20;
     const options = [];
     if (startHour <= endHour) {
       for (let hour = startHour; hour <= endHour; hour++) {

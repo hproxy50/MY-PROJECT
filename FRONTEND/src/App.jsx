@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 //import Login from "./pages/AUTH/login";
-import Register from "./pages/AUTH/register";
+//import Register from "./pages/AUTH/register";
 import BranchSelectPage from "./pages/CUSTOMER/BranchSelectPage";
 import Unauthorized from "./pages/OTHER/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -18,6 +18,7 @@ import ForgotPassword from "./components/ForgotPassword.jsx";
 import ResetPassword from "./components/ResetPassword.jsx";
 import LoginTest from "./pages/AUTH/loginAuth.jsx"
 import Branch from "./pages/CUSTOMER/Branch.jsx";
+import Register from "./pages/AUTH/registerAuth.jsx";
 
 function App() {
   return (

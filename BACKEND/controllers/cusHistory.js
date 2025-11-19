@@ -34,7 +34,7 @@ export const getOrderHistory = async (req, res) => {
           AND o.status NOT IN ('DRAFT')
           ${branchCondition}
         ORDER BY o.created_at DESC`,
-        queryParams
+      queryParams
     );
 
     if (orders.length === 0) {
@@ -75,6 +75,31 @@ export const getOrderHistory = async (req, res) => {
   }
 };
 
+export const cancelOrder = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const orderId = req.params.orderId;
+
+    const [result] = await db.query(
+      `UPDATE orders 
+       SET status = 'CANCELED' 
+       WHERE order_id = ? AND user_id = ? AND status = 'PENDING'`,
+      [orderId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        message:
+          "Cannot cancel this order. It may involve being prepared or does not exist.",
+      });
+    }
+
+    return res.status(200).json({ message: "Order canceled successfully" });
+  } catch (error) {
+    console.error("Error cancelling order:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+};
 
 // export const buyAgain = async (req, res) => {
 //   try {
@@ -118,7 +143,7 @@ export const getOrderHistory = async (req, res) => {
 
 //     for (const item of items) {
 //       await db.query(
-//         `INSERT INTO order_items 
+//         `INSERT INTO order_items
 //         (order_id, item_id, quantity, unit_price, line_total, options, option_summary, options_hash, created_at)
 //         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
 //         [

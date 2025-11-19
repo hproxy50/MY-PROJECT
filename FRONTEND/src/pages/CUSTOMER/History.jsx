@@ -16,6 +16,8 @@ export default function History() {
   const [isEditing, setIsEditing] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
 
   const [showAllBranches, setShowAllBranches] = useState(false);
   const navigate = useNavigate();
@@ -59,6 +61,11 @@ export default function History() {
   const closeDetailModal = () => {
     setSelectedOrder(null);
     setShowDetailModal(false);
+  };
+
+  const openCancelModal = (orderId) => {
+    setOrderToCancel(orderId);
+    setShowCancelModal(true);
   };
 
   const getRatingText = () => {
@@ -123,6 +130,26 @@ export default function History() {
     }
   };
 
+  const handleConfirmCancel = async () => {
+    if (!orderToCancel) return;
+    try {
+      await API.put(`/history/${orderToCancel}/cancel`);
+      alert("Order canceled successfully!");
+
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.order_id === orderToCancel ? { ...o, status: "CANCELED" } : o
+        )
+      );
+    } catch (err) {
+      console.error("Cancel error:", err);
+      alert(err.response?.data?.message || "Failed to cancel order");
+    } finally {
+      setShowCancelModal(false);
+      setOrderToCancel(null);
+    }
+  };
+
   // const handleBuyAgain = async (orderId) => {
   //   try {
   //     const res = await API.post("/history/buy-again", { order_id: orderId });
@@ -173,6 +200,10 @@ export default function History() {
       }
 
       // if (filterStatus === "CANCELED") {
+      //   return new Date(b.created_at) - new Date(a.created_at);
+      // }
+
+      // if (filterStatus === "COMPLETED") {
       //   return new Date(b.created_at) - new Date(a.created_at);
       // }
 
@@ -297,6 +328,14 @@ export default function History() {
                       Buy again!
                     </button>
                   )} */}
+                  {order.status.toUpperCase() === "PENDING" && (
+                    <button
+                      className="History-product-button-canceled"
+                      onClick={() => openCancelModal(order.order_id)}
+                    >
+                      Cancel order
+                    </button>
+                  )}
                   {order.status.toUpperCase() === "COMPLETED" && (
                     <button
                       className="History-product-button-rating"
@@ -373,6 +412,26 @@ export default function History() {
             </div>
           </div>
         )}
+        {showCancelModal && (
+          <div className="modalCancel">
+            {" "}
+            <div className="modalCancel-content">
+              <h3>Confirm Cancellation</h3>
+              <p>Are you sure you want to cancel this order?</p>
+              <div className="modalCancel-buttons">
+                <button className="btn-confirm" onClick={handleConfirmCancel}>
+                  Yes, Cancel it
+                </button>
+                <button
+                  className="btn-closeee"
+                  onClick={() => setShowCancelModal(false)}
+                >
+                  No, Keep it
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {showDetailModal && selectedOrder && (
           <div className="modalDetail">
             <div className="modalDetail-content">
@@ -435,13 +494,16 @@ export default function History() {
                   </p>
                   {selectedOrder.order_type === "DELIVERY" && (
                     <p>
-                      <strong>Shipping fee:</strong>{" "}
-                    + {Number(selectedOrder.shipping_fee).toLocaleString("vi-VN")}đ
+                      <strong>Shipping fee:</strong> +{" "}
+                      {Number(selectedOrder.shipping_fee).toLocaleString(
+                        "vi-VN"
+                      )}
+                      đ
                     </p>
                   )}
                   <p>
-                    <strong>Discount:</strong>{" "}
-                    - {Number(selectedOrder.discount_amount).toLocaleString(
+                    <strong>Discount:</strong> -{" "}
+                    {Number(selectedOrder.discount_amount).toLocaleString(
                       "vi-VN"
                     )}
                     đ
