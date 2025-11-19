@@ -580,7 +580,7 @@ export default function StaffMenu() {
                     </Col>
                     <Col md={2}>
                       <Form.Group>
-                        <Form.Label>Required selection?</Form.Label>
+                        <Form.Label>Required?</Form.Label>
                         <Form.Select
                           value={g.is_required ? 1 : 0}
                           onChange={(e) =>
