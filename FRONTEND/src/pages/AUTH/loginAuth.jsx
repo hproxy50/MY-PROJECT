@@ -30,8 +30,8 @@ export default function Login() {
         navigate("/branches");
       } else if (role === "CHEF") {
         navigate("/chef");
-      } else if (role === "SHIPPER") {
-        navigate("/shipper");
+      } else if (role === "RECEPTIONIST") {
+        navigate("/receptionist");
       } else {
         setError("User role not determined");
       }

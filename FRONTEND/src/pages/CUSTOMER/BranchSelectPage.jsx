@@ -10,7 +10,6 @@ export default function Branch() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  // Hàm lấy danh sách chi nhánh (Tương đương useEffect của trang cũ)
   useEffect(() => {
     const fetchBranches = async () => {
       try {
@@ -25,10 +24,8 @@ export default function Branch() {
     fetchBranches();
   }, [token]);
 
-  // Hàm xử lý chọn chi nhánh (Tương đương handleSelectBranch của trang cũ)
   const handleSelectBranch = async (branchId) => {
     try {
-      // Gọi API để tạo order (giỏ hàng) với chi nhánh đã chọn
       const orderRes = await API.post(
         "/cart",
         { branch_id: branchId },
@@ -37,11 +34,10 @@ export default function Branch() {
 
       const orderId = orderRes.data.order_id;
 
-      // Chuyển hướng đến trang Menu
       navigate(`/menu/${branchId}/${orderId}`);
     } catch (err) {
       console.error(err);
-      alert("Không thể chọn chi nhánh. Vui lòng thử lại.");
+      alert("Unable to select branch. Please try again.");
     }
   };
 
@@ -77,11 +73,9 @@ export default function Branch() {
               workers. We are committed to the quality of ingredients, delicious
               flavors and reasonable prices, so that every visit is a fun and
               complete experience.
-            </p>
-            {/* Vị trí chứa các nút button chọn chi nhánh */}
+            </p>           
             <div className="branch-body-mid-right-right2">
               {branches.length > 0 ? (
-                // Map qua danh sách chi nhánh và tạo button cho mỗi chi nhánh
                 branches.map((b) => (
                   <button
                     key={b.branch_id}
@@ -91,7 +85,7 @@ export default function Branch() {
                   </button>
                 ))
               ) : (
-                <p>Đang tải chi nhánh...</p>
+                <p>Loading branches...</p>
               )}
             </div>
           </div>

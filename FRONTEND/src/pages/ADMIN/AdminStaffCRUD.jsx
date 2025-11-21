@@ -81,7 +81,7 @@ export default function AdminStaffCRUD() {
       tabFilteredUsers = users;
     } else if (activeTab === "staff") {
       tabFilteredUsers = users.filter((u) =>
-        ["STAFF", "CHEF", "SHIPPER"].includes(u.role)
+        ["STAFF", "CHEF", "RECEPTIONIST"].includes(u.role)
       );
     } else if (activeTab === "customer") {
       tabFilteredUsers = users.filter((u) => u.role === "CUSTOMER");
@@ -122,7 +122,7 @@ export default function AdminStaffCRUD() {
     setEditingUser(user);
     setIsEditing(true);
 
-    const type = ["STAFF", "CHEF", "SHIPPER"].includes(user.role)
+    const type = ["STAFF", "CHEF", "RECEPTIONIST"].includes(user.role)
       ? "STAFF"
       : "CUSTOMER";
     setFormType(type);
@@ -142,7 +142,7 @@ export default function AdminStaffCRUD() {
     const { name, value } = e.target;
     let newFormData = { ...formData, [name]: value };
     if (name === "role" && !isEditing) {
-      const newType = ["STAFF", "CHEF", "SHIPPER"].includes(value)
+      const newType = ["STAFF", "CHEF", "RECEPTIONIST"].includes(value)
         ? "STAFF"
         : "CUSTOMER";
       setFormType(newType);
@@ -242,7 +242,7 @@ export default function AdminStaffCRUD() {
     if (role === "CUSTOMER") variant = "success";
     if (role === "STAFF") variant = "primary";
     if (role === "CHEF") variant = "warning";
-    if (role === "SHIPPER") variant = "info";
+    if (role === "RECEPTIONIST") variant = "info";
     if (role === "ADMIN") variant = "danger";
     return <Badge bg={variant}>{role}</Badge>;
   };
@@ -290,7 +290,7 @@ export default function AdminStaffCRUD() {
                 Staff (
                 {
                   users.filter((u) =>
-                    ["STAFF", "CHEF", "SHIPPER"].includes(u.role)
+                    ["STAFF", "CHEF", "RECEPTIONIST"].includes(u.role)
                   ).length
                 }
                 )
@@ -497,7 +497,7 @@ export default function AdminStaffCRUD() {
                           <>
                             <option value="STAFF">STAFF (Manager)</option>
                             <option value="CHEF">CHEF (Kitchen)</option>
-                            <option value="SHIPPER">Receptionist (Order delivery)</option>
+                            <option value="RECEPTIONIST">RECEPTIONIST (Order delivery)</option>
                           </>
                         )}
                         {isEditing && (

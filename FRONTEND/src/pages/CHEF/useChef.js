@@ -7,9 +7,9 @@ const fetcher = (url) => api.get(url).then((res) => res.data);
 
 export function useChefOrders() {
   const { data, error, isLoading } = useSWR(CHEF_ORDERS_URL, fetcher, {
-    refreshInterval: 5000, // Tự động gọi lại API mỗi 5s
-    dedupingInterval: 5000, // Tránh gọi trùng lặp
-    revalidateOnFocus: true, // Tự động gọi lại khi focus tab
+    refreshInterval: 5000, 
+    dedupingInterval: 5000, 
+    revalidateOnFocus: true, 
   });
 
   return {

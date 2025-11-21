@@ -1,8 +1,8 @@
 import db from "../config/db.js";
 
 const ensureShipper = (req, res) => {
-  if (!req.user || req.user.role !== "SHIPPER") {
-    return res.status(403).json({ message: "Only SHIPPER has access" });
+  if (!req.user || req.user.role !== "RECEPTIONIST") {
+    return res.status(403).json({ message: "Only RECEPTIONIST has access" });
   }
   if (!req.user.branch_id) {
     return res
@@ -258,7 +258,7 @@ export const cancelOrdersForShipper = async (req, res) => {
       updated_count: affected,
     });
   } catch (error) {
-    console.error("cancelOrdersForShipper error:", error);
+    console.error("cancelOrders error:", error);
     return res.status(500).json({ message: "Server error", error });
   }
 };

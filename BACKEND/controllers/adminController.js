@@ -137,7 +137,7 @@ export const createStaff = async (req, res) => {
       return res.status(400).json({ message: "Invalid branch" });
     }
 
-    const allowedRoles = ["STAFF", "CHEF", "SHIPPER"];
+    const allowedRoles = ["STAFF", "CHEF", "RECEPTIONIST"];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
@@ -289,7 +289,7 @@ export const updateStaff = async (req, res) => {
     }
 
     
-    const allowedRoles = ["STAFF", "CHEF", "SHIPPER"];
+    const allowedRoles = ["STAFF", "CHEF", "RECEPTIONIST"];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }

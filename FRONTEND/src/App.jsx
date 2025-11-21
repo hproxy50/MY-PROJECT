@@ -13,7 +13,7 @@ import History from "./pages/CUSTOMER/History";
 import PaymentResult from "./pages/CUSTOMER/PaymentResult";
 import Rating from "./pages/CUSTOMER/Rating";
 import Chef from "./pages/CHEF/ChefPage.jsx";
-import Shipper from "./pages/Receptionist/Shipper.jsx"
+import Receptionist from "./pages/Receptionist/receptionist.jsx"
 import ForgotPassword from "./components/ForgotPassword.jsx";
 import ResetPassword from "./components/ResetPassword.jsx";
 import LoginTest from "./pages/AUTH/loginAuth.jsx"
@@ -64,10 +64,10 @@ function App() {
       />
 
       <Route
-        path="/shipper"
+        path="/receptionist"
         element={
-          <ProtectedRoute allowedRoles={["SHIPPER"]}>
-            <Shipper />
+          <ProtectedRoute allowedRoles={["RECEPTIONIST"]}>
+            <Receptionist />
           </ProtectedRoute>
         }
       />
