@@ -1,5 +1,5 @@
 import { useState } from "react";
-import API from "../../api/api"; 
+import API from "../../api/api";
 import { useNavigate, Link } from "react-router-dom";
 import "../../css/Login.scss";
 import loginImage from "../../assets/image/login.png";
@@ -21,6 +21,7 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       alert("Login successful");
+
       const role = res.data.user.role;
       if (role === "STAFF") {
         navigate("/staff/orders");
@@ -50,6 +51,9 @@ export default function Login() {
           <div className="Login-body-right-form">
             <h1>Login to eat!!!</h1>
 
+            {/* Thông báo lỗi */}
+            {error && <p className="error-message">{error}</p>}
+
             <form onSubmit={handleLogin}>
               <div className="Login-body-right-form-input">
                 <input
@@ -73,7 +77,6 @@ export default function Login() {
               <Link
                 className="Login-body-right-form-forgot"
                 to="/forgot-password"
-                // style={{ display: "block", textDecoration: "none" }} 
               >
                 Forget password?
               </Link>
@@ -82,8 +85,19 @@ export default function Login() {
                 Login
               </button>
             </form>
+
             <p className="Login-body-right-register">
-              No account yet? <Link to="/register" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 'bold' }}>Register</Link>
+              No account yet?{" "}
+              <Link
+                to="/register"
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                  fontWeight: "bold",
+                }}
+              >
+                Register
+              </Link>
             </p>
           </div>
         </div>

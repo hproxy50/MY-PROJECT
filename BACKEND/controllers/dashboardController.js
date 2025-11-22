@@ -150,7 +150,10 @@ export const getStaffDashboardSummary = async (req, res) => {
       },
       charts: {
         revenue_by_day: revenueByDayData,
-        top_5_items: topItemsData,
+        top_5_items: topItemsData.map((item) => ({
+          name: item.name,
+          total_sold: Number(item.total_sold),
+        })),
         rating: {
           average: Number(ratingData[0].average_rating).toFixed(1),
           total: Number(ratingData[0].total_ratings),

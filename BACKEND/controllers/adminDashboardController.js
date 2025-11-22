@@ -1,6 +1,5 @@
 import db from "../config/db.js";
 
-
 export const getAdminDashboardSummary = async (req, res) => {
   try {
     // 1. Revenue (Today, Week, Month)
@@ -97,17 +96,25 @@ export const getAdminDashboardSummary = async (req, res) => {
           staff: Number(userData[0].total_staff),
           chef: Number(userData[0].total_chef),
           shipper: Number(userData[0].total_shipper),
-          total_staff: Number(userData[0].total_staff) + Number(userData[0].total_chef) + Number(userData[0].total_shipper)
-        }
+          total_staff:
+            Number(userData[0].total_staff) +
+            Number(userData[0].total_chef) +
+            Number(userData[0].total_shipper),
+        },
       },
       charts: {
         revenue_by_branch: revenueByBranch,
-        rating_by_branch: ratingByBranch.map(r => ({ ...r, average_rating: Number(r.average_rating).toFixed(1) })),
+        rating_by_branch: ratingByBranch.map((r) => ({
+          ...r,
+          average_rating: Number(r.average_rating).toFixed(1),
+        })),
         customer_growth: customerGrowth,
-        top_10_items: top10Items
-      }
+        top_10_items: top10Items.map((item) => ({
+          name: item.name,
+          total_sold: Number(item.total_sold),
+        })),
+      },
     });
-
   } catch (error) {
     handleDBError(res, error, "Get admin dashboard data");
   }
