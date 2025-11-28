@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import sendEmail from "../utils/sendEmail.js";
 
-
 export const register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -22,6 +21,13 @@ export const register = async (req, res) => {
     if (rows.length > 0) {
       return res.status(400).json({ message: "Email already exists" });
     }
+
+    // const [phoneRows] = await db.query("SELECT * FROM users WHERE phone = ?", [
+    //   phone,
+    // ]);
+    // if (phoneRows.length > 0) {
+    //   return res.status(400).json({ message: "phone number already exists" });
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -44,18 +50,14 @@ export const login = async (req, res) => {
       email,
     ]);
     if (rows.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Incorrect email or password" });
+      return res.status(400).json({ message: "Incorrect email or password" });
     }
 
     const user = rows[0];
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ message: "Incorrect email or password" });
+      return res.status(400).json({ message: "Incorrect email or password" });
     }
 
     const token = jwt.sign(
@@ -146,9 +148,7 @@ export const resetPassword = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Token is invalid or expired" });
+      return res.status(400).json({ message: "Token is invalid or expired" });
     }
 
     const user = rows[0];

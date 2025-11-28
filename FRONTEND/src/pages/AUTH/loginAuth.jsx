@@ -51,7 +51,6 @@ export default function Login() {
           <div className="Login-body-right-form">
             <h1>Login to eat!!!</h1>
 
-            {/* Thông báo lỗi */}
             {error && <p className="error-message">{error}</p>}
 
             <form onSubmit={handleLogin}>

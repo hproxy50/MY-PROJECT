@@ -27,7 +27,7 @@ export default function ResetPassword() {
 
     try {
       const res = await API.post(`/auth/reset-password/${token}`, { password });
-      setMessage(res.data.message + "You will be redirected to the login page...");
+      setMessage(res.data.message + " You will be redirected to the login page...");
       
       setTimeout(() => {
         navigate("/login");

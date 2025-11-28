@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "../../css/History.scss";
 import API from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/headerStatus";
+import { useCustomerHistory } from "./useCustomerHistory.js";
 
 export default function History() {
-  const [orders, setOrders] = useState([]);
+  const [showAllBranches, setShowAllBranches] = useState(false);
+
+  const { orders, isLoading, mutate } = useCustomerHistory(showAllBranches);
+
   const [filterStatus, setFilterStatus] = useState("IN_PROGRESS");
   const [searchText, setSearchText] = useState("");
   const [showRatingModal, setshowRatingModal] = useState(false);
@@ -19,39 +23,7 @@ export default function History() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
 
-  const [showAllBranches, setShowAllBranches] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const currentBranchId = localStorage.getItem("currentBranchId");
-        let url = "/history";
-        if (!showAllBranches && currentBranchId) {
-          url = `/history?branch_id=${currentBranchId}`;
-        }
-        const res = await API.get(url);
-        let ordersData = res.data.orders || [];
-        const updatedOrders = await Promise.all(
-          ordersData.map(async (order) => {
-            try {
-              const check = await API.get(`/ratings/check/${order.order_id}`);
-              return {
-                ...order,
-                isRated: check.data.rated,
-              };
-            } catch {
-              return { ...order, isRated: false };
-            }
-          })
-        );
-        setOrders(updatedOrders);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      }
-    };
-    fetchOrders();
-  }, [showAllBranches]);
 
   const openDetailModal = (order) => {
     setSelectedOrder(order);
@@ -118,11 +90,9 @@ export default function History() {
         });
         alert("Rating submitted successfully!");
       }
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.order_id === currentOrderId ? { ...o, isRated: true } : o
-        )
-      );
+
+      mutate();
+
       setshowRatingModal(false);
     } catch (err) {
       console.error("Rating error:", err);
@@ -136,11 +106,7 @@ export default function History() {
       await API.put(`/history/${orderToCancel}/cancel`);
       alert("Order canceled successfully!");
 
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.order_id === orderToCancel ? { ...o, status: "CANCELED" } : o
-        )
-      );
+      mutate();
     } catch (err) {
       console.error("Cancel error:", err);
       alert(err.response?.data?.message || "Failed to cancel order");
@@ -149,17 +115,6 @@ export default function History() {
       setOrderToCancel(null);
     }
   };
-
-  // const handleBuyAgain = async (orderId) => {
-  //   try {
-  //     const res = await API.post("/history/buy-again", { order_id: orderId });
-  //     const draftOrderId = res.data.order_id;
-  //     navigate(`/cart/${draftOrderId}`);
-  //   } catch (err) {
-  //     console.error("Buy again error:", err);
-  //     alert(err.response?.data?.message || "Cannot add to cart");
-  //   }
-  // };
 
   const handleToggleBranchView = () => {
     setShowAllBranches((prev) => !prev);
@@ -198,15 +153,6 @@ export default function History() {
       if (filterStatus === "ALL") {
         return new Date(b.created_at) - new Date(a.created_at);
       }
-
-      // if (filterStatus === "CANCELED") {
-      //   return new Date(b.created_at) - new Date(a.created_at);
-      // }
-
-      // if (filterStatus === "COMPLETED") {
-      //   return new Date(b.created_at) - new Date(a.created_at);
-      // }
-
       return 0;
     });
 
@@ -268,7 +214,11 @@ export default function History() {
         </div>
 
         <div className="History-mid">
-          {orders.length === 0 ? (
+          {isLoading && orders.length === 0 ? (
+            <p style={{ textAlign: "center", marginTop: "20px" }}>
+              Loading orders...
+            </p>
+          ) : orders.length === 0 ? (
             <p style={{ textAlign: "center", marginTop: "20px" }}>
               No order history found.
             </p>
@@ -318,16 +268,6 @@ export default function History() {
                   <p>: {Number(order.final_price).toLocaleString("vi-VN")}đ</p>
                 </div>
                 <div className="History-product-button">
-                  {/* {["COMPLETED", "CANCELED"].includes(
-                    order.status.toUpperCase()
-                  ) && (
-                    <button
-                      className="History-product-button-again"
-                      onClick={() => handleBuyAgain(order.order_id)}
-                    >
-                      Buy again!
-                    </button>
-                  )} */}
                   {order.status.toUpperCase() === "PENDING" && (
                     <button
                       className="History-product-button-canceled"
@@ -447,9 +387,6 @@ export default function History() {
 
               <div className="modalDetail-body">
                 <div className="modalDetail-info">
-                  {/* <p>
-                    <strong>Order ID:</strong> {selectedOrder.order_id}
-                  </p> */}
                   <p>
                     <strong>Status:</strong> {selectedOrder.status}
                   </p>

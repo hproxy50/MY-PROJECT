@@ -177,7 +177,7 @@ export default function AdminPromotion() {
       formData.discount_type === "PERCENT" &&
       (formData.discount_value <= 0 || formData.discount_value > 100)
     ) {
-      setFeedback({ type: "danger", message: "The % value must be between 1 and 100." });
+      setFeedback({ type: "danger", message: "The % value must be between 1 and 100" });
       resetFeedback();
       return;
     }

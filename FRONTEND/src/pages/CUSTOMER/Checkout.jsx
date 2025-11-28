@@ -79,8 +79,9 @@ export default function Checkout() {
     const now = new Date();
     const currentHour = now.getHours();
     // const startHour = Math.max(8, currentHour + 1);
-    const startHour = currentHour + 1;
-    const endHour = 23;
+    // const startHour = currentHour + 1;
+    const startHour = currentHour;
+    const endHour = 24;
     //const endHour = 20;
     const options = [];
     if (startHour <= endHour) {

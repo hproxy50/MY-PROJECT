@@ -29,7 +29,7 @@ export default function Register() {
     setError('');
 
     if (form.phone.length < 10 && form.phone.length > 0) {
-        setError("Phone number only have 10 digits");
+        setError("Please enter correct phone number length");
         return;
     }
 
