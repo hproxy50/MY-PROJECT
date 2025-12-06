@@ -51,15 +51,17 @@ const checkStockAndClearCartIfUnavailable = async (order_id) => {
   const [itemsInCart] = await db.query(
     `SELECT 
        oi.item_id, 
-       oi.quantity, 
+       SUM(oi.quantity) as total_quantity_needed, 
        m.name, 
        m.stock_quantity, 
        m.is_available 
      FROM order_items oi
      JOIN menu_items m ON oi.item_id = m.item_id
-     WHERE oi.order_id = ?`,
+     WHERE oi.order_id = ?
+     GROUP BY oi.item_id, m.name, m.stock_quantity, m.is_available`,
     [order_id]
   );
+
   if (itemsInCart.length === 0) {
     return {
       success: false,
@@ -73,7 +75,7 @@ const checkStockAndClearCartIfUnavailable = async (order_id) => {
     if (
       Number(item.is_available) !== 1 ||
       (item.stock_quantity !== null &&
-        Number(item.quantity) > Number(item.stock_quantity))
+        Number(item.total_quantity_needed) > Number(item.stock_quantity))
     ) {
       unavailableItems.push(item);
     }
@@ -84,10 +86,10 @@ const checkStockAndClearCartIfUnavailable = async (order_id) => {
 
     await db.query(
       `UPDATE orders SET 
-         total_price = 0, 
-         final_price = 0, 
-         discount_amount = 0, 
-         promo_id = NULL 
+          total_price = 0, 
+          final_price = 0, 
+          discount_amount = 0, 
+          promo_id = NULL 
        WHERE order_id = ?`,
       [order_id]
     );
@@ -95,7 +97,7 @@ const checkStockAndClearCartIfUnavailable = async (order_id) => {
     const itemNames = unavailableItems.map((i) => i.name).join(", ");
     return {
       success: false,
-      message: `Sorry, the following items are out of stock or out of quantity: ${itemNames}, please reorder.`,
+      message: `Sorry, the following items are out of stock or insufficient: ${itemNames}. Please reorder.`,
       items: unavailableItems.map((i) => i.name),
     };
   }
@@ -398,7 +400,6 @@ export const payOSWebhook = async (req, res) => {
     const data = req.body;
 
     console.log("--- PAYOS WEBHOOK RECEIVED ---");
-    console.log(JSON.stringify(data, null, 2));
 
     const verified = await payos.webhooks.verify(
       data,
@@ -408,20 +409,18 @@ export const payOSWebhook = async (req, res) => {
       console.log("!!! Webhook signature INVALID");
       return res.status(400).json({ message: "Invalid signature" });
     }
-    console.log("Webhook signature VERIFIED");
 
     const orderCode = data.data?.orderCode;
-    console.log(`Extracted orderCode: [${orderCode}]`);
 
     if (data.code === "00" && data.success) {
       console.log(`SUCCESS condition met for order [${orderCode}].`);
 
       if (!orderCode) {
-        console.log("!!! ERROR: orderCode is undefined, cannot update DB.");
         return res.json({
           message: "Webhook processed, but orderCode missing.",
         });
       }
+
       const connection = await db.getConnection();
       try {
         await connection.beginTransaction();
@@ -433,71 +432,70 @@ export const payOSWebhook = async (req, res) => {
 
         if (orders.length === 0) {
           await connection.rollback();
-          console.log(
-            `Order [${orderCode}] not found or not in PENDING state. Skipping.`
-          );
-          return res.json({ message: "Webhook processed, order not pending." });
+          console.log(`Order [${orderCode}] handled or not found.`);
+          return res.json({ message: "Order processed or not pending." });
         }
+
         const [itemsToDecrement] = await connection.query(
           `SELECT item_id, quantity FROM order_items WHERE order_id = ?`,
           [orderCode]
         );
 
         const itemIds = [];
+
         for (const item of itemsToDecrement) {
           itemIds.push(item.item_id);
-          await connection.query(
-            `UPDATE menu_items
-            SET stock_quantity = stock_quantity - ?
-            WHERE item_id = ?`,
-            [item.quantity, item.item_id]
-          );
-        }
 
+          const [result] = await connection.query(
+            `UPDATE menu_items
+             SET stock_quantity = stock_quantity - ?
+             WHERE item_id = ? AND stock_quantity >= ?`,
+            [item.quantity, item.item_id, item.quantity]
+          );
+          if (result.affectedRows === 0) {
+            throw new Error(
+              `Out of stock for item ${item.item_id}, cannot fulfill order!`
+            );
+          }
+        }
         if (itemIds.length > 0) {
           await connection.query(
             `UPDATE menu_items
-            SET is_available = 0
-            WHERE item_id IN (?) AND stock_quantity = 0`,
+             SET is_available = 0
+             WHERE item_id IN (?) AND stock_quantity = 0`,
             [itemIds]
           );
         }
-        const [result] = await connection.query(
-          `UPDATE orders SET status='PREPARING' WHERE order_id=? AND status='PENDING'`,
+        await connection.query(
+          `UPDATE orders SET status='PREPARING' WHERE order_id=?`,
           [orderCode]
         );
 
         await connection.commit();
-        console.log(
-          `Database update (PREPARING) and stock decrement complete for [${orderCode}]. Info:`,
-          result.info
-        );
+        console.log(`Order [${orderCode}] confirmed. Stock updated.`);
       } catch (err) {
         await connection.rollback();
         console.error(
-          `!!! CRITICAL WEBHOOK TRANSACTION ERROR for order [${orderCode}]:`,
-          err
+          `!!! TRANSACTION FAILED for [${orderCode}]:`,
+          err.message
         );
-        return res.json({
-          message: "Webhook processed, DB transaction failed.",
-        });
+
+        return res.json({ message: "Webhook processed (Transaction failed)" });
       } finally {
         connection.release();
       }
     } else {
-      console.log(
-        `Webhook reported NON-SUCCESS. Code: [${data.code}], Success: [${data.success}]`
-      );
       await db.query(
         `UPDATE orders SET status='CANCELLED' WHERE order_id=? AND status='PENDING'`,
         [orderCode]
       );
       console.log(`Order [${orderCode}] set to CANCELLED.`);
     }
-    res.json({ message: "Webhook processed" });
+
+    return res.json({ message: "Webhook processed" });
   } catch (err) {
     console.error("!!! CRITICAL WEBHOOK ERROR:", err);
-    res.status(500).json({ message: "Webhook error" });
+    return res.status(500).json({ message: "Webhook error" });
   }
 };
 

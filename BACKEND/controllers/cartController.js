@@ -60,7 +60,6 @@ export const addItemToOrder = async (req, res) => {
           .json({ message: "selectedOptions is not valid JSON" });
       }
     }
-
     const [items] = await db.query(
       "SELECT price, stock_quantity, is_available FROM menu_items WHERE item_id = ?",
       [item_id]
@@ -72,17 +71,17 @@ export const addItemToOrder = async (req, res) => {
     }
     const item = items[0];
     if (Number(item.is_available) !== 1) {
-      return res.status(400).json({ message: "This item is currently unavailable." });
+      return res
+        .status(400)
+        .json({ message: "This item is currently unavailable." });
     }
 
     const basePrice = Number(item.price);
     const stock = item.stock_quantity;
 
-
     let optionsArray = Array.isArray(selectedOptions)
       ? selectedOptions.slice()
       : [];
-
 
     let totalDelta = 0;
     const [groups] = await db.query(
@@ -177,6 +176,11 @@ export const addItemToOrder = async (req, res) => {
 
     const unitPrice = basePrice + totalDelta;
 
+    const [currentTotalRows] = await db.query(
+      `SELECT SUM(quantity) as total_qty FROM order_items WHERE order_id = ? AND item_id = ?`,
+      [order_id, item_id]
+    );
+    const currentTotalInCart = Number(currentTotalRows[0]?.total_qty || 0);
     const [existing] = await db.query(
       "SELECT * FROM order_items WHERE order_id = ? AND item_id = ? AND COALESCE(options_hash,'') = ?",
       [order_id, item_id, optionsHash]
@@ -185,11 +189,15 @@ export const addItemToOrder = async (req, res) => {
     if (existing.length > 0) {
       const existingRow = existing[0];
       const newQty = Number(existingRow.quantity) + Number(quantity);
-      if (stock !== null && stock !== undefined && newQty > stock) {
+      const totalAfterUpdate =
+        currentTotalInCart - Number(existingRow.quantity) + newQty;
+
+      if (stock !== null && stock !== undefined && totalAfterUpdate > stock) {
         return res.status(400).json({
-          message: `Quantity exceeds stock, only ${stock} product left`,
+          message: `Quantity exceeds stock. Stock left: ${stock}. In cart already: ${currentTotalInCart}.`,
         });
       }
+
       const newLineTotal = unitPrice * newQty;
       await db.query(
         "UPDATE order_items SET quantity=?, unit_price=?, line_total=?, option_summary=?, options = ?, options_hash = ? WHERE order_item_id=?",
@@ -204,11 +212,14 @@ export const addItemToOrder = async (req, res) => {
         ]
       );
     } else {
-      if (stock !== null && stock !== undefined && Number(quantity) > stock) {
+      const totalAfterInsert = currentTotalInCart + Number(quantity);
+
+      if (stock !== null && stock !== undefined && totalAfterInsert > stock) {
         return res.status(400).json({
-          message: `Quantity exceeds stock, only ${stock} product left`,
+          message: `Quantity exceeds stock. Stock left: ${stock}. In cart already: ${currentTotalInCart}.`,
         });
       }
+
       const lineTotal = unitPrice * Number(quantity);
       await db.query(
         `INSERT INTO order_items (order_id, item_id, quantity, unit_price, line_total, options, option_summary, options_hash, created_at)
@@ -277,12 +288,13 @@ export const getOrderById = async (req, res) => {
 
 export const updateOrderItem = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; 
     const { quantity } = req.body;
 
     if (quantity < 1) {
       return res.status(400).json({ message: "Quantity must be >= 1" });
     }
+
     const [rows] = await db.query(
       "SELECT * FROM order_items WHERE order_item_id = ?",
       [id]
@@ -300,32 +312,43 @@ export const updateOrderItem = async (req, res) => {
       return res.status(404).json({ message: "The dish does not exist." });
     }
     const stock = items[0].stock_quantity;
+    const [otherRows] = await db.query(
+      `SELECT SUM(quantity) as other_qty 
+       FROM order_items 
+       WHERE order_id = ? AND item_id = ? AND order_item_id != ?`,
+      [orderItem.order_id, orderItem.item_id, id]
+    );
 
-    if (quantity > stock) {
+    const otherQty = Number(otherRows[0]?.other_qty || 0);
+    const newRequestedQty = Number(quantity);
+    const totalNeeded = otherQty + newRequestedQty;
+
+    if (stock !== null && stock !== undefined && totalNeeded > stock) {
       return res.status(400).json({
-        message: `Quantity exceeds inventory. Only ${stock} of product left`,
+        message: `Quantity exceeds inventory. Stock available: ${stock}. You are holding other options: ${otherQty}. Total wanted to purchase: ${totalNeeded}.`,
       });
     }
 
-    const newLineTotal = orderItem.unit_price * quantity;
+    const newLineTotal = orderItem.unit_price * newRequestedQty;
 
     await db.query(
       "UPDATE order_items SET quantity=?, line_total=? WHERE order_item_id=?",
-      [quantity, newLineTotal, id]
+      [newRequestedQty, newLineTotal, id]
     );
 
     await db.query(
       `UPDATE orders 
-   SET total_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?),
-       promo_id = NULL,
-       discount_amount = 0,
-       final_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?)
-   WHERE order_id = ?`,
+       SET total_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?),
+           promo_id = NULL,
+           discount_amount = 0,
+           final_price = (SELECT SUM(line_total) FROM order_items WHERE order_id = ?)
+       WHERE order_id = ?`,
       [orderItem.order_id, orderItem.order_id, orderItem.order_id]
     );
 
     return res.json({ message: "Update item successfully" });
   } catch (error) {
+    console.error("updateOrderItem error: ", error);
     return res.status(500).json({ message: "Server error", error });
   }
 };

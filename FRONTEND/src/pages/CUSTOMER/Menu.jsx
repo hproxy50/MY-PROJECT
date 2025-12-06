@@ -76,9 +76,15 @@ export default function Menu() {
     if (quantity > 1) setQuantity((prev) => prev - 1);
   };
 
-  const handleIncrease = () => {
-    setQuantity((prev) => prev + 1);
-  };
+const handleIncrease = () => {
+    if (selectedItem && selectedItem.stock_quantity !== null && selectedItem.stock_quantity !== undefined) {
+        if (quantity < selectedItem.stock_quantity) {
+            setQuantity((prev) => prev + 1);
+        }
+    } else {
+        setQuantity((prev) => prev + 1);
+    }
+};
 
   const handleOptionChange = (group, choice, checked) => {
     setSelectedOptions((prev) => {
